@@ -215,6 +215,18 @@ ThreshDialog.ApplySelection=uicontrol('style','pushbutton','units','normalized',
     'position',[.05 .02 ,.4,.1],'string','Preview','backgroundcolor',...
     get(ThreshDialog.fh,'Color'),'fontsize',14,'FontWeight','bold','callback',{@Apply,ImportData});
 
+%Modify options based on input type
+switch get(ThreshDialog.fh,'Name')
+    case 'Growth'
+        set(ThreshDialog.StackRadio,'enable','off')
+        set(ThreshDialog.MPRadio,'enable','off')
+        set(ThreshDialog.InMaster,'enable','off')
+        set(ThreshDialog.MaxPRadio,'enable','off')
+        set(ThreshDialog.In_MasterOis,'value',1)
+        
+        set(ThreshDialog.MastROIRadio,'value',1)
+        set(ThreshDialog.WIRadio,'enable','off')
+end
 Q=[{handles},data(2),data(3),data(4),data(5),data(6),data(7),data(8),data(9),data(10),data(11)];
 guidata(handles.fh,Q)
 
@@ -245,6 +257,9 @@ switch Process_Type
         [ROI]=Manual_Filter(Image,sHandles);
     case'Integral'
         [ROI]=Integral_Filter(Image,HistImage,sHandles);
+    case 'Growth'
+        
+        [ROI]=RegionGrowing_Filter(Image,sHandles); 
         
         
 end

@@ -238,30 +238,36 @@ else
     else
         Five_Six_Seven=Extract_Data(data,[5,6,7],Choice.Channel,Choice.Display);
         Image=zeros(size(RawImage));
-            if ~isempty(Five_Six_Seven{1,1});
-                Six_RowPull=Find_RowPull(Five_Six_Seven{2}(:,3),mROI_IndexPull);
-                Centroids=cell(numel(Six_RowPull),1);
-                for i=1:numel(Six_RowPull)
-                    tImage=zeros(size(RawImage));
-                    Shift=Five_Six_Seven{3}(Six_RowPull(i),:)-(BB-1);
-                    
-                    IM=Five_Six_Seven{2}{Six_RowPull(i),1};
-                    imS=size(IM);
-                    if numel(imS)<numel(size(Image))
-                        imS(3)=1;
-                    end
-                    tImage(Shift(2)+1:Shift(2)+imS(1),...
-                        Shift(1)+1:Shift(1)+imS(2),...
-                        Shift(3)+1:Shift(3)+imS(3))=IM;
-                    tImage=tImage(1:size(RawImage,1),1:size(RawImage,2),1:size(RawImage,3));
-                    if  strcmp(Choice.Overlay,'Color')
-                        Image=Image+tImage*i;
-                    else
-                        Image=Image+tImage;
-                    end
-                    Centroids{i,1}=Five_Six_Seven{2}{Six_RowPull(i),4}-Five_Six_Seven{3}(Six_RowPull(i),:)+Shift;
-                    
+ 
+        if ~isempty(Five_Six_Seven{1,1});
+            Six_RowPull=Find_RowPull(Five_Six_Seven{2}(:,3),mROI_IndexPull);
+            Centroids=cell(numel(Six_RowPull),1);
+            for i=1:numel(Six_RowPull)
+                tImage=zeros(size(RawImage)*4);
+                Expand_Size=size(tImage);
+                Shift=Five_Six_Seven{3}(Six_RowPull(i),:)-(BB-1);
+                
+                IM=Five_Six_Seven{2}{Six_RowPull(i),1};
+                imS=size(IM);
+                if numel(imS)<numel(size(Image))
+                    imS(3)=1;
                 end
+                tShift=floor(Expand_Size/6);
+                Shift=Shift+tShift;
+                tImage(Shift(2)+1:Shift(2)+imS(1),...
+                    Shift(1)+1:Shift(1)+imS(2),...
+                    Shift(3)+1:Shift(3)+imS(3))=IM;
+                tImage=tImage(tShift(2)+1:size(RawImage,1)+tShift(2),...
+                    tShift(1)+1:size(RawImage,2)+tShift(1),...
+                    tShift(3)+1:size(RawImage,3)+tShift(3));
+                if  strcmp(Choice.Overlay,'Color')
+                    Image=Image+tImage*i;
+                else
+                    Image=Image+tImage;
+                end
+                Centroids{i,1}=Five_Six_Seven{2}{Six_RowPull(i),4}-Five_Six_Seven{3}(Six_RowPull(i),:)+Shift-tShift;
+                
+            end
                 
                 if  strcmp(Choice.Overlay,'Color')
                     if ~handles.cLabelMatrix_Toggle(Choice.Display,Choice.Channel)

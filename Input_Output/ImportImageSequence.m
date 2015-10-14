@@ -29,6 +29,7 @@ for i=1:numel(fNames)
 end
 fNames=fNames(Tiff);
 for i=1:numel(fNames)
+    
 underScorePos=regexp(fNames(i).name,'_');
 endName_Index=regexp(fNames(i).name,'\.');
 tZ_Index=regexp(fNames(i).name,'z');

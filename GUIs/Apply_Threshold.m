@@ -231,7 +231,7 @@ if get(H.MasterSet,'value')==1
     RawImage=Extract_Data(data,2,get(data{1}.ChannelMenu,'value'),1);
 
     Expand_Rate=data{1}.MasterExpansion(get(data{1}.DisplayModeMenu,'value'),1);
-    [mROI_data]=Create_MasterROI_Desc(mRegions,FS,RawImage,Expand_Rate);
+    [mROI_data]=Create_MasterROI_Desc(mRegions,FS,RawImage,repmat(Expand_Rate,size(mRegions,1),1));
     H.MasterExpansion=Expand_Rate;
     data{9}{get(data{1}.ChannelMenu,'value')}{2,9}=mROI_data;
     [data]=Map_New_mROI(data);

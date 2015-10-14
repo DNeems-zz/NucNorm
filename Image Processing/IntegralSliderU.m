@@ -73,7 +73,7 @@ end
 function []=Opacity(varargin)
 data=guidata(varargin{1});
 handles=data{1};
-CF=data{5};
+CF=nan;
 for i=1:numel(data{4})
     if i==1
         Cuml_OC=data{4}(i);

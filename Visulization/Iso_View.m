@@ -187,50 +187,12 @@ MChan=data{10}(1).Channel_Master;
 NumChan=numel(data{9});
 IsoSurf=cell(NumChan,1);
 
+%Fix this of mROI_Obj after lunch
+Region=mROI_Obj(data,mROI_Choice);
 for i=1:NumChan
-BinaryImage=double(zeros(data{9}{MChan}{2,9}{1,4}));
+    BinaryImage=double(zeros(data{9}{MChan}{2,9}{1,4}));
     if ~isempty(data{9}{i})
-        [RowPull]=Find_RowPull( data{9}{i}{2,6}(:,3),data{9}{MChan}{2,9}{mROI_Choice,2});
-        for j=1:numel(RowPull)
-            FS=data{9}{i}{2,7}(RowPull(j),:)-data{9}{MChan}{2,9}{mROI_Choice,3};
-            IM=data{9}{i}{2,6}{RowPull(j),1};
-            
-            
-            if (FS(1)+size(IM,2)-1)>size(BinaryImage,2)
-                y_toBig=(FS(1)+size(IM,2)-1)-size(BinaryImage,2);
-                IM=IM(:,1:end-y_toBig,:);
-            end
-            if (FS(2)+size(IM,1)-1)>size(BinaryImage,1)
-                x_toBig=(FS(2)+size(IM,1)-1)-size(BinaryImage,1);
-                IM=IM(1:end-x_toBig,:,:);
-            end
-            if FS(1)<1
-                x_exclude=1-FS(1);
-                FS(1)=FS(1)+x_exclude;
-                IM(x_exclude+1:end,:,:);
-            end
-            if FS(2)<1
-                y_exclude=1-FS(2);
-                FS(2)=FS(2)+y_exclude;
-                IM(:,y_exclude+1:end,:);
-            end
-            
-            Planes=size(IM,3);   
-            for k=1:Planes
-            IM(:,:,k)=imfill(IM(:,:,k),'holes');
-            end
-            %IM=bwperim(IM)
-
-
-            for k=1:Planes
-                    BinaryImage(FS(2):FS(2)+size(IM,1)-1,...
-                    FS(1):FS(1)+size(IM,2)-1,...
-                     data{9}{i}{2,7}(RowPull(j),3)+k)=BinaryImage(FS(2):FS(2)+size(IM,1)-1,...
-                    FS(1):FS(1)+size(IM,2)-1,...
-                     data{9}{i}{2,7}(RowPull(j),3)+k)+double(IM(:,:,k));
-            end
-            
-        end
+    BinaryImage=Region.getmROI_Image(i,'Binary');
     end
     IsoSurf{i,1}=logical(BinaryImage);
 end

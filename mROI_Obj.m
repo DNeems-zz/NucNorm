@@ -220,8 +220,9 @@ classdef mROI_Obj < handle
             Names=[{'NN_Sim'},...
                 {'LI_Sim'},...
                 {'cHull_Sim'}];
+
             for i=1:3
-                if  isempty(obj.(Names{i}){1})
+                if  obj.(Names{i})==0;
                 else
                     obj.(Names{i}){1,1}=[unique(obj.(Names{i}){1,1}(:,1:2),'rows'),ones(size(unique(obj.(Names{i}){1,1}(:,1:2),'rows'),1),1)];
                 end

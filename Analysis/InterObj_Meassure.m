@@ -123,7 +123,7 @@ if sum(cell2mat(get(H.AnProp(2).AnaProp(1:3),'value')))~=0
                 display(sprintf('Calculating Normlized Distances from ROI %d/%d',R,size(Region_Objs,1)));
                 for i=1:3;
                     if get(H.AnProp(2).AnaProp(i),'value')==1
-                        Ref_Set=Region_Objs{R,1}.getPixel_List(ismember(H.Ref_Channel,Region_Objs{R,1}.Channel_Num),H.Pixel_Set,'Microns');
+                        Ref_Set=Region_Objs{R,1}.getPixel_List(Region_Objs{R,1}.Channel_Num(ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel)),H.Pixel_Set,'Microns');
                         Sim_Points=Region_Objs{R,1}.(Names{i}){1,1};
                         for k=1:size(Ref_Set,1)
                             for j=1:size(Sim_Points,1)
@@ -138,7 +138,7 @@ if sum(cell2mat(get(H.AnProp(2).AnaProp(1:3),'value')))~=0
         case 3
             for R=1:size(Region_Objs,1)
                 display(sprintf('Calculating Normlized Distances from ROI %d/%d',R,size(Region_Objs,1)));
-                Num_Ref_Objs=size(Region_Objs{R,1}.Binary{ismember(H.Ref_Channel,Region_Objs{R,1}.Channel_Num)},1);
+                Num_Ref_Objs=size(Region_Objs{R,1}.Binary{Region_Objs{R,1}.Channel_Num(ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel))},1);
                 for i=1:3;
                     if get(H.AnProp(2).AnaProp(i),'value')==1
                         Sim_Points=Region_Objs{R,1}.(Names{i}){1,1};

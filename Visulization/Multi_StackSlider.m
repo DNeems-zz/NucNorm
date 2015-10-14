@@ -292,8 +292,11 @@ S=guidata(varargin{3}.fh);
 
 if get(S.ViewComp,'value')==0
         Comp_Controller=get(findobj(0,'tag','Snapshot_Control'),'userdata');
+try
     close(Comp_Controller.fh)
-else
+catch
+end
+    else
     if Mode==1
         Comp_Controller=SnapShot_Builder(varargin{4},varargin{3});
     else

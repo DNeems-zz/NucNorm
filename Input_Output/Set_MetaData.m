@@ -10,6 +10,7 @@ catch
     
 metaData.SimSet=cell(1,numel(data{10}));    
 end
+
 switch Choice
     case 11
         prompt={'Enter Image ID',...
@@ -84,7 +85,7 @@ switch Choice
         L=load(strcat(pathName,filename));
         loaddata=L.data;
         mData=loaddata(arrayfun(@(x) isstruct(x{1}),loaddata));
-        metaData=mData{1};
+        metaData=mData{2};
         data = guidata(varargin{1});
         handles=data{1};
     case 21

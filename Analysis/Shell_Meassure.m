@@ -117,9 +117,9 @@ Shell_Points=cell(size(Region_Objs,1),4);
 Names=[{'NN_Sim'}, {'LI_Sim'},{'cHull_Sim'}];
 for R=1:size(Region_Objs,1)
     display(sprintf('Calculating Shells from ROI %d/%d',R,size(Region_Objs,1)));
-    Ref_Set=Region_Objs{R,1}.getPixel_List(ismember(H.Ref_Channel,Region_Objs{R,1}.Channel_Num),H.Shell_Type,'Microns');
+    Ref_Set=Region_Objs{R,1}.getPixel_List(Region_Objs{R,1}.Channel_Num(ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel)),H.Shell_Type,'Microns');
     Pixel_byShell=cell(1,size(Ref_Set,1));
-    Ref_Set_whole=Region_Objs{R,1}.getPixel_List(ismember(H.Ref_Channel,Region_Objs{R,1}.Channel_Num),'Whole','Microns');
+    Ref_Set_whole=Region_Objs{R,1}.getPixel_List(Region_Objs{R,1}.Channel_Num(ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel)),'Whole','Microns');
    
     for i=1:size(Ref_Set,1)
         Dist_From_Perm=nan(size(Ref_Set_whole{i,1},1),1);
@@ -134,10 +134,10 @@ for R=1:size(Region_Objs,1)
             Pixel_byShell{i,1}{1,j}=Ref_Set_whole{i,1}(Index_From_Perm(Start_Points(1,j):End_Points(1,j)),:);
         end
     end
-    Shell_Points(R,1)=Pixel_byShell;    
+    Shell_Points(R,1)=Pixel_byShell;
     for O=1:3
         if get(H.AnProp(2).AnaProp(O),'value')==1
-            Ref_Set=Region_Objs{R,1}.getPixel_List(ismember(H.Ref_Channel,Region_Objs{R,1}.Channel_Num),H.Shell_Type,'Microns');
+            Ref_Set=Region_Objs{R,1}.getPixel_List(Region_Objs{R,1}.Channel_Num(ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel)),H.Shell_Type,'Microns');
             Pixel_byShell=cell(1,size(Ref_Set,1));
             Ref_Set_whole=Region_Objs{R,1}.(Names{O});
             for i=1:size(Ref_Set,1)
