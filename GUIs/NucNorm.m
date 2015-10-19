@@ -163,7 +163,11 @@ Image.ThrMenu.Seg.Integral=uimenu(Image.ThrMenu.Segementation,'Label','Integral'
 %Image.ThrMenu.Seg.Derivitive=uimenu(Image.ThrMenu.Segementation,'Label','Derivitive','callback',{@ThreshGUI,'Derivitive'},'UserData',3);
 %Image.ThrMenu.Seg.Bright=uimenu(Image.ThrMenu.Segementation,'Label','Automatic: Bright','callback',{@ThreshGUI,'Bright'},'UserData',5);
 %Image.ThrMenu.Seg.Dark=uimenu(Image.ThrMenu.Segementation,'Label','Automatic: Dark','callback',{@ThreshGUI,'Dark'},'UserData',6);
-Image.ThrMenu.Seg.RegGrow=uimenu(Image.ThrMenu.Segementation,'Label','Region Growing','callback',{@ThreshPortalGUI,'Growth'},'UserData',7);
+Image.ThrMenu.Seg.RegGrow=uimenu(Image.ThrMenu.Segementation,'Label','Region Growing');
+Image.ThrMenu.RG.Auto=uimenu(Image.ThrMenu.Seg.RegGrow,'Label','Automatic','callback',{@ThreshPortalGUI,'Growth','Auto'},'UserData',7);
+Image.ThrMenu.RG.BackGround=uimenu(Image.ThrMenu.Seg.RegGrow,'Label','Background Subtraction','callback',{@ThreshPortalGUI,'Growth','BGSub'},'UserData',7);
+Image.ThrMenu.RG.Pick=uimenu(Image.ThrMenu.Seg.RegGrow,'Label','Pick Seeds','callback',{@ThreshPortalGUI,'Growth','Pick'},'UserData',7);
+
 
 
 Image.ThrMenu.Filter=uimenu(Image.ThreshMenu,'Label','Filtering');
@@ -281,7 +285,8 @@ end
 function []=MoveSlider(varargin)
 data = guidata(varargin{1});
 handles=data{1};
-set(handles.CurrentSlice,'string',sprintf('Current Slice: %d',get(handles.SliceSlider,'value')))
+
+set(handles.CurrentSlice,'string',sprintf('Current Slice: %d',round(get(handles.SliceSlider,'value'))))
 ChangeDisplay(handles.fh,[],4)
 end
 
@@ -326,7 +331,10 @@ switch varargin{3}
     case 3
         Manip_Menu.fh = uicontextmenu;
         Manip_Menu.Delete=uimenu(Manip_Menu.fh, 'Label', 'Manual','callback',{@Split_ROI,'Manual',data,Mod_ROIs,Shift});
-        Manip_Menu.Delete_mROI=uimenu(Manip_Menu.fh, 'Label', 'Watershed','callback',{@Split_ROI,'Watershed',data,Mod_ROIs,Shift},'enable','off');
+        Manip_Menu.Watershed=uimenu(Manip_Menu.fh, 'Label', 'Watershed','enable','on');
+        Manip_Menu.WS.Auto=uimenu(Manip_Menu.Watershed, 'Label', 'Auto','callback',{@Split_ROI,'Watershed',data,Mod_ROIs,Shift,'Auto'},'enable','on');
+        Manip_Menu.WS.Pick=uimenu(Manip_Menu.Watershed, 'Label', 'Pick','callback',{@Split_ROI,'Watershed',data,Mod_ROIs,Shift,'Pick'},'enable','on');
+
         Manip_Menu.CropZone=uimenu(Manip_Menu.fh, 'Label','Hull Dist','callback',{@Split_ROI,'Hull Dist',Mod_ROIs,Shift},'enable','off');
         Manip_Menu.KeepZone=uimenu(Manip_Menu.fh, 'Label', 'Future','callback',{@Split_ROI,'Future',data,Mod_ROIs,Shift},'enable','off');
         set(handles.ImagePlace_Handle,'UIContextMenu',Manip_Menu.fh)
@@ -371,9 +379,11 @@ switch varargin{3}
         delta_ROIs=cell(1,2);
         %Make a Single Unqiue Association
     case 4
+
         NewImage=false(H.IMSize);
         for i=1:size(FSS_data{2},1);
             FS=FSS_data{3}(i,:);
+            FS=FS+1;
             [W,h,D]=size(FSS_data{2}{i,1});
             NewImage(FS(2):FS(2)+W-1,FS(1):FS(1)+h-1,FS(3):FS(3)+D-1)=FSS_data{2}{i,1};
         end

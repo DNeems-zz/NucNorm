@@ -20,6 +20,9 @@ for i=1:size(Image,1)
         
     else
         H=IntegralSliderU(Image{i,1},HistImage{i,1});
+        if size(Image,1)==1
+            set(H.All,'visible','off')
+        end
         waitfor(H.fh,'userdata')
         Res=guidata(H.fh);
         LLimit=find(Res{4}>=(1-(get(Res{1}.Slider,'value')/100)),1,'last')-1;

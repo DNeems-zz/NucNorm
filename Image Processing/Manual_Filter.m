@@ -1,10 +1,14 @@
 function [ROI]=Manual_Filter(Image,sHandles)
 ROI=cell(size(Image,1),1);
 UseAll=false;
+
 for i=1:size(Image,1)
     if UseAll
     else
         H=ManualSlider(max(Image{i,1},[],3));
+        if size(Image,1)==1
+            set(H.All,'visible','off')
+        end
         waitfor(H.fh,'userdata')
         Res=guidata(H.fh);
         LLimit=floor(get(Res{1}.Slider,'value'));

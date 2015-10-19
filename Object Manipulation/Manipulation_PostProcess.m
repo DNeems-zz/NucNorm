@@ -46,6 +46,7 @@ end
 
 [~,I]=sort(cell2mat(delta_ROIs(:,2)));
 delta_ROIs=delta_ROIs(I,:);
+
 for i=1:size(delta_ROIs,1)
     if delta_ROIs{i,2}==1
         rmImage=Six_to_Image(delta_ROIs{i,1}{1,2},delta_ROIs{i,1}{1,3},handles.IMSize,'Remove');

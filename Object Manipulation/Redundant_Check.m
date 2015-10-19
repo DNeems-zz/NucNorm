@@ -4,10 +4,13 @@ Current_Chan=get(data{1}.ChannelMenu,'value');
 
     Groups_ROIs=Indv_Objs{2};
     Groups_FS=Indv_Objs{3};
-    Pixels=cell(size(Groups_ROIs,1),1);
+
+Pixels=cell(size(Groups_ROIs,1),1);
 
     for i=1:size(Groups_ROIs,1)
-        tPL=regionprops(Groups_ROIs{i,1},'pixellist');
+        tPL=regionprops(Groups_ROIs{i,1},'pixellist','area');
+        [~,I]=max([tPL.Area]);
+        tPL=tPL(I);
         if size(tPL.PixelList,2)<3
         tPL.PixelList=[tPL.PixelList,zeros(size(tPL.PixelList,1),1)];
         end

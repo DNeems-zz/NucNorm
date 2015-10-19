@@ -9,7 +9,6 @@ MChan=data{10}(1).Channel_Master;
 %working on implementation of the master ROI as the histagram input
 
 
- 
 
 IM=Extract_Data(data,2,Channel_Choice,Display_Choice);
 if islogical(IM{1}(1,1))
@@ -73,11 +72,12 @@ switch Input_Image_Group
         if MasterROI_Choice==1
             Image=cell(size(data{9}{data{10}(1).Channel_Master}{2,9},1),3);
             for i=1:size(data{9}{data{10}(1).Channel_Master}{2,9},1)
-                [Image(i,:)]=Extract_Image_Region(data,i+1,IM,iHandles.IMSize(3));
+                [Image(i,1:3)]=Extract_Image_Region(data,i+1,IM,iHandles.IMSize(3));
                 mImage=Crop_byIndex(data{9}{MChan}{2,9},[data{9}{MChan}(2,6),data{9}{MChan}(2,7)],i);
                 if get(sHandles.In_MasterOis,'value')
                     Image{i,1}=Image{i,1}-uint8(~mImage)*255;
                 end
+                Image{i,4}=mImage;
             end
         else
             [Image]=Extract_Image_Region(data,MasterROI_Choice,IM,iHandles.IMSize(3));
@@ -85,6 +85,7 @@ switch Input_Image_Group
             if get(sHandles.In_MasterOis,'value')
                 Image{1,1}=Image{1,1}-uint8(~mImage)*255;
             end
+            Image{1,4}=mImage;
         end
 end
 

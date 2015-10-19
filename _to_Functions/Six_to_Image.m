@@ -21,7 +21,9 @@ switch Choice
         
         PL=cell(size(Six,1),1);
         for i=1:size(Six,1)
-            tROI=regionprops(Six{i,1},'pixellist');
+            tROI=regionprops(Six{i,1},'pixellist','area');
+            [~,I]=max([tROI.Area]);
+            tROI=tROI(I);
             PL{i,1}=tROI.PixelList+repmat(Seven(i,:),size(tROI.PixelList,1),1);
         end
         PL=vertcat(PL{:});
@@ -31,7 +33,9 @@ switch Choice
     case {2,3}
         PL=cell(size(Six,1),1);
         for i=1:size(Six,1)
-            tROI=regionprops(Six{i,1},'pixellist');
+            tROI=regionprops(Six{i,1},'pixellist','area');
+            [~,I]=max([tROI.Area]);
+            tROI=tROI(I);
             if size(tROI.PixelList,2)~=size(Six{i,4},2)
             tROI.PixelList=[tROI.PixelList,ones(size(tROI.PixelList,1),1)];
             end

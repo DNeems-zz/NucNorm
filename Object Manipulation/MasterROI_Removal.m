@@ -4,7 +4,7 @@ handle=data{1};
     NumChan=numel(data{9});
     
     for i=1:NumChan
-        if  i==data{10}(1).Channel_Master || isempty(data{9}{i})
+        if  isempty(data{9}{i})
         else
             
             set(handle.ChannelMenu,'value',i);

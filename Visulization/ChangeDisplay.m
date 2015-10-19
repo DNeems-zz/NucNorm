@@ -134,8 +134,9 @@ switch Choice.Projection
         Image=Image(:,:,round(size(Image,3)/2));
         RawImage=RawImage(:,:,round(size(RawImage,3)/2));
     case 5
-        Image=Image(:,:,get(handles.SliceSlider,'value'));
-        RawImage=RawImage(:,:,get(handles.SliceSlider,'value'));
+
+        Image=Image(:,:,floor(get(handles.SliceSlider,'value')));
+        RawImage=RawImage(:,:,floor(get(handles.SliceSlider,'value')));
 end
 
 end
@@ -203,14 +204,13 @@ if Choice.MasterROI==1
                     imS(3)=1;
                 end
                 
-                tImage(Shift(2)+1:Shift(2)+imS(1),...
-                    Shift(1)+1:Shift(1)+imS(2),...
-                    Shift(3)+1:Shift(3)+imS(3))=IM;
+                tImage(Shift(2):Shift(2)+imS(1)-1,...
+                    Shift(1):Shift(1)+imS(2)-1,...
+                    Shift(3):Shift(3)+imS(3)-1)=IM;
                 tImage=tImage(1:size(RawImage,1),1:size(RawImage,2),1:size(RawImage,3));
                 Image=Image+tImage*i;
                 
             end
-            
             handles.cLabelMatrix{Choice.Display,Choice.Channel}=Image;
             Image=handles.cLabelMatrix{Choice.Display,Choice.Channel};
         else
@@ -372,6 +372,7 @@ if Allow_Modification==0 && Choice.MasterROI>1
 else
     Mode='on';
 end
+
 for i=1:numel(sFN)
     set(handles.ThrMenu.Seg.(sFN{i}),'enable',Mode)
 end

@@ -7,7 +7,7 @@ for i=1:size(Image,1)
     NucSize=sum(sum(sum(Temp_IM~=0)));
     %Basic Otso
     I=graythresh(Temp_IM);
-    I=I*255;
+    I=((max(Temp_IM(:))-min(Temp_IM(:)))*I)+min(Temp_IM(:));
     %Intenseity Mode and location of the mode pixels
         IM_NoZero=(Temp_IM(Temp_IM~=0));
     IM_NoZero=double(IM_NoZero(IM_NoZero>I));

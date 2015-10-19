@@ -1,6 +1,6 @@
 function [Image]=BasicImage_Filter(Image,sHandles)
     
-Conectivity_Struct=bwconncomp(Image,str2double(CallBack_Value_String(sHandles.Conc)));
+Conectivity_Struct=bwconncomp(Image,6);
     Pix_per_Obj=cellfun(@length,[Conectivity_Struct.PixelIdxList]);
     % Exclude Objects by Size
     Conectivity_Struct.PixelIdxList=Conectivity_Struct.PixelIdxList(Pix_per_Obj>=str2double(get(sHandles.ExluVal,'string')));
