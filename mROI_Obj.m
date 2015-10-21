@@ -100,6 +100,7 @@ classdef mROI_Obj < handle
             %                images containing as all objects
             switch Type
                 case 'ByObj'
+
                     Binnary_Images=obj.Binary{obj.Channel_Num==Chan}(:,1);
                     Perimeter_Image=cell(size(Binnary_Images,1),1);
                     for i=1:size(Binnary_Images,1)
@@ -136,6 +137,19 @@ classdef mROI_Obj < handle
                     FS=obj.FrameShift{obj.Channel_Num==Chan};
                     FS=FS(Obj_Num,:);
                     mROI_Image=makemROI_Image(obj,Int_Images,FS);
+                case 'Perimeter'
+                    Int_Images=obj.getPerm_Image(find(obj.Channel_Num==Chan),'ByObj');
+                    
+                    FS=nan(numel(Int_Images),3);
+                    Images=cell(numel(Int_Images),1);
+                    for i=1:numel(Int_Images)
+                        Images{i,1}=bwperim(Int_Images{i});
+                        FS(i,:)=obj.FrameShift{obj.Channel_Num==Chan}(i,:);
+                    end
+                    
+                    mROI_Image=makemROI_Image(obj,Images,FS);
+                    
+                    
                 otherwise
                     error('Invalid Type:  See Docs')
             end
@@ -240,6 +254,41 @@ classdef mROI_Obj < handle
             obj.Channel_Num=obj.Channel_Num(~ismember(obj.Channel_Num,Chan));
             obj.NumChan=obj.NumChan-1;
         end
+        function obj=Group_Signals(obj,Chan,Group_Number)
+            Chan_Index=ismember(obj.Channel_Num,Chan);
+            Combo_Obj=obj.Binary(Chan_Index);
+            Binary_Combo=Combo_Obj{1};
+            Combo_Obj=obj.Intensity(Chan_Index);
+            Int_Combo=Combo_Obj{1};
+            Int_Image=obj.getmROI_Image(Chan,'Intensity');
+
+            New_Group_Index=kmeans(vertcat(Binary_Combo{:,4}),Group_Number);
+            New_Binary=cell(Group_Number,4);
+            New_Int=cell(Group_Number,2);
+            New_FS=zeros(Group_Number,3);
+            for i=1:Group_Number
+                if sum(New_Group_Index==i)==1
+                New_Binary(i,:)=Binary_Combo(New_Group_Index==i,:);
+                New_Int(i,:)=Int_Combo(New_Group_Index==i,:);
+                New_FS(i,:)=obj.FrameShift{Chan_Index}(New_Group_Index==i,:);
+                else
+                    New_Binary{i,1}=obj.makemROI_Image(Binary_Combo(New_Group_Index==i,1),obj.FrameShift{Chan_Index}(New_Group_Index==i,:));
+                New_Binary{i,2}=max(New_Binary{i,1},[],3);
+                New_Binary{i,3}=obj.mROI_Code;
+                RP=regionprops(New_Binary{i,1},'pixellist');
+                New_Binary{i,4}=mean(vertcat(RP.PixelList))+obj.mROI_FS-[1,1,1];
+                New_FS(i,:)=[0,0,0];
+                New_Int{i,1}=Int_Image-(uint8(~New_Binary{i,1})*255);
+                New_Int{i,2}=max( New_Int{i,1},[],3);
+                end
+                
+                
+            end
+            obj.Binary{Chan_Index}=New_Binary;
+            obj.Intensity{Chan_Index}=New_Int;
+            obj.FrameShift{Chan_Index}=New_FS;
+        end
+        
         function [Group_Cluster_Ids,Cluster_Centroids]=findClusters(obj,Seed_Number,Cluster_Chans,Type)
             %Type:  'kMeans', performs kMeans Clustering
             %Type:  'crossSignal', Finds clusters but requires each cluster

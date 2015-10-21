@@ -23,7 +23,7 @@ end
 function []=SingleROI_Image(Input_H,data,mROI_Choice,Image_Window)
 NumChan=numel(data{9});
 MChan=data{10}(1).Channel_Master;
-Slice=get(Input_H.SliceMenu,'value');
+Slice=get(Input_H.SliceMenu,'value')-1;
 RawImage=uint8(zeros(data{9}{MChan}{2,9}{mROI_Choice,4}(1:2)+1));
 BinaryImage=repmat(RawImage,[1,1,3]);
 RawImage=repmat(RawImage,[1,1,3]);
@@ -42,12 +42,11 @@ for i=1:NumChan
                     case 'Mask'
                         Mask=Region_Obj.getmROI_Image(i,'Binary');
                 end
-                
-                if Slice==1
+                if Slice==0
                     switch CallBack_Value_String(Input_H.Fill(i))
                         case 'Perimeter'
                             for k=1:numel(P)
-                                BinaryImage(:,:,P(k))=BinaryImage(:,:,P(k))+uint8(Mask(:,:,floor(size(Mask,3)/2)))*255;
+                                BinaryImage(:,:,P(k))=BinaryImage(:,:,P(k))+uint8(bwperim(max(Mask,[],3)))*255;
                             end
                         otherwise
                             for k=1:numel(P)
@@ -55,6 +54,7 @@ for i=1:NumChan
                             end
                     end
                 else
+                    
                     for k=1:numel(P)
                         BinaryImage(:,:,P(k))=BinaryImage(:,:,P(k))+uint8(Mask(:,:,Slice))*255;
                     end
@@ -69,7 +69,7 @@ for i=1:NumChan
                         Int_Image=Int_Image-uint8(~Mask)*255;
                         
                 end
-                if Slice==1
+                if Slice==0
                     for k=1:numel(P)
                         RawImage(:,:,P(k))=RawImage(:,:,P(k))+max(Int_Image,[],3);
                     end

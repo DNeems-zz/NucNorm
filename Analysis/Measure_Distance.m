@@ -3,6 +3,7 @@ function [allTable,summaryTable]=Measure_Distance(Query_PL,Ref_PL,Region_Objs,Di
 %Mode: 'min'
 %Mode: 'max'
 %Mode: 'mean'
+
 Ana_ID=Query_PL{2};
 Query_PL=Query_PL{1};
 Ref_ID=Ref_PL{2};
@@ -43,7 +44,9 @@ for p=1:size(Ref_PL,1)
             if ~isempty(Distrobution_Distance{1,O})
                 [pVal,...
                     pVal_uCI,...
-                    pVal_lCI]=Bootstrap_Error(absDist(z,1),Distrobution_Distance{1,O}{p,1},str2double(get(H.AnProp(2).AnaProp(5),'string')),str2double(get(H.AnProp(2).AnaProp(7),'string')));
+                    pVal_lCI]=Bootstrap_Error(absDist(z,1),...
+                    Distrobution_Distance{1,O}{p,1},...
+                    H);
             else
                 pVal=nan; pVal_uCI=nan; pVal_lCI=nan;
             end
@@ -56,8 +59,8 @@ for p=1:size(Ref_PL,1)
             z=z+1;
     
     end
-    Name=sprintf('%s:%s_%d to %s Summary',Obj_Region_Chan,Ref_ID,p,Ana_ID);
-     [summaryTable{p,1},summaryTable{p,2},summaryTable{p,3}]=toSignal_Summary(allTable(Group_Start:z-1,2:end),Name,11);
+    Name=sprintf('%s:%s_%d to %s Summary',Obj_Region_Chan,Ref_ID,p,Ana_ID); 
+    [summaryTable{p,1},summaryTable{p,2},summaryTable{p,3}]=toSignal_Summary(allTable(Group_Start:z-1,2:end),Name,11,H);
 
 end
 

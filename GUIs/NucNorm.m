@@ -186,8 +186,7 @@ Image.ThrMenu.Redo=uimenu(Image.ThreshMenu,'Label','Redo','callback',{@Undo_Redo
 Image.AnaMenu = uimenu('Label','Anaylsis');
 Image.AMenu.Geo=uimenu(Image.AnaMenu,'Label','Geometric Methods');
 %Image.AMenu.GeoDes=uimenu(Image.AMenu.Geo,'Label','Descriptors','callback',{@AnaylsisPortalGUI,'Geo',1});
-Image.AMenu.RD=uimenu(Image.AMenu.Geo,'Label','Normalize: Anchored Ends','callback',{@AnaylsisPortalGUI,'Geo',2});
-Image.AMenu.IOD=uimenu(Image.AMenu.Geo,'Label','Normalize: Free Ends','callback',{@AnaylsisPortalGUI,'Geo',3});
+Image.AMenu.Between_Among=uimenu(Image.AMenu.Geo,'Label','Between/Among','callback',{@AnaylsisPortalGUI,'Geo',1});
 Image.AMenu.Shell=uimenu(Image.AMenu.Geo,'Label','Shells','callback',{@AnaylsisPortalGUI,'Geo',4});
 
 %Image.AMenu.Int=uimenu(Image.AnaMenu,'Label','Intensity Methods');
@@ -198,6 +197,8 @@ Image.AMenu.SimOc=uimenu(Image.AnaMenu,'Label','Simulate Occupany');
 Image.AMenu.NN=uimenu(Image.AMenu.SimOc,'Label','Nearest Neighboor','callback',{@Occupancy,1});
 Image.AMenu.LI=uimenu(Image.AMenu.SimOc,'Label','Linear Interpolation','callback',{@Occupancy,2});
 Image.AMenu.cHull=uimenu(Image.AMenu.SimOc,'Label','Inside Hull (Convex)','callback',{@Occupancy,3});
+Image.AMenu.cHull=uimenu(Image.AMenu.SimOc,'Label','Wiggle','callback',{@Occupancy,4});
+
 Image.AMenu.Debug=uimenu(Image.AnaMenu,'Label','Debug','callback',@Debug);
 
 %Visuulization Menus

@@ -13,7 +13,7 @@ end
 set(Comp_Controller.SliceMenu,'callback',{@IM_Update,Comp_Controller,data})
 smallstep=1/(size(data{9}{data{10}(1).Channel_Master}{2,9},1)-1); 
 largestep=smallstep*10;                                                     
-C.Image_Window=figure('tag','Comp_Window','visible','off','name','Composite','numbertitle','off');
+C.Image_Window=figure('tag','Comp_Window','toolbar','figure','visible','off','name','Composite','numbertitle','off','menubar','none');
 C.sl1 = uicontrol('style','slide',...                                        
     'unit','normalized',...                           
     'position',[0.05 .02 .9 .06],...
@@ -40,6 +40,7 @@ C.Parent_Ax = axes('units','normalized','parent',C.Image_Window,...
 set(Comp_Controller.fh,'userdata',[{Comp_Controller},{C}])
 
 Generate_SnapShot(1,1,Comp_Controller,data,C)
+
 set(C.Image_Window,'CloseRequestFcn',{@CRF,C.Image_Window,Comp_Controller.fh})
 set(Comp_Controller.fh,'CloseRequestFcn',{@CRF,C.Image_Window,Comp_Controller.fh})
 

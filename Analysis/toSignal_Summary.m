@@ -1,26 +1,20 @@
-function [minRow,maxRow,meanRow]=toSignal_Summary(table,Name,nRows)
+function [minRow,maxRow,meanRow]=toSignal_Summary(table,Name,nRows,H)
 
 table(cellfun(@isempty,table(:,1)),:)=[];
-minRow=cell(1,nRows);
-maxRow=cell(1,nRows);
-meanRow=cell(1,nRows);
-minRow{1,1}=Name;
-maxRow{1,1}=Name;
-meanRow{1,1}=Name;
-if isempty(table)
-minRow(2:end)=arrayfun(@(x) {x},nan(1,numel(minRow)-1));
-maxRow(2:end)=arrayfun(@(x) {x},nan(1,numel(maxRow)-1));
-meanRow(2:end)=arrayfun(@(x) {x},nan(1,numel(meanRow)-1));
+Summary_Table=cell(3,1);
+Funcs=get(H.GS.Within(ismember(get(H.GS.Within,'visible'),'on')),'userdata');
 
-else
-[~,I]=min(cell2mat(table(:,1)));
-
-minRow(2:end)=table(I,:);
-[~,I]=max(cell2mat(table(:,1)));
-maxRow(2:end)=table(I,:);
-
-meanRow(2:end)=arrayfun(@(x) {x},mean(cell2mat(table),1));
+for i=1:sum(ismember(get(H.GS.Within,'visible'),'on')) %Number of visable items in the group
+    Summary_Table{i,1}=cell(1,nRows);
+    if get(H.GS.Within(i),'value')==1
+        Summary_Table{i,1}{1,1}=Name;
+        try
+            [~,I]=Funcs{i}(cell2mat(table(:,1)));
+            Summary_Table{i-1,1}(2:end)=table(I,:);
+        catch
+            Summary_Table{i,1}(2:end)=arrayfun(@(x) {x},Funcs{i}(cell2mat(table)));
+        end
+    end
 end
-
-
+[minRow,maxRow,meanRow]=Summary_Table{:};
 end

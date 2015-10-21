@@ -27,9 +27,11 @@ else
         
         tempTable=vertcat(summary{:,i});
         for j=1:3
-            tt=[Header;vertcat(tempTable{:,j})];
-            tt{1,1}=Title{1}{2}{j};
-            cSummary{1,i}{1,j}=toDataSet(tt);
+            if ~isempty(tempTable{1,j}{1})
+                tt=[Header;vertcat(tempTable{:,j})];
+                tt{1,1}=Title{1}{2}{j};
+                cSummary{1,i}{1,j}=toDataSet(tt);
+            end
         end
     end
 end

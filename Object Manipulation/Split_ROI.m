@@ -67,13 +67,14 @@ end
 delIndex=Split_ROI{2}{3};
 [BaseImage,New_ROIs]=Assign_mROI(BaseImage,New_ROIs,data);
 New_ROIs=ROI_to_DataStruct(New_ROIs,BaseImage);
-
-if data{10}(1).Channel_Master==Channel_Choice && data{1}.MasterSet_Toggle==1
+if data{1}.MasterSet_Toggle==1 
+    if data{10}(1).Channel_Master==Channel_Choice 
     data=Configure_mROI(New_ROIs,data,delIndex);
     set(handle.MasterROIMenu,'string',['None',arrayfun(@(x) num2str(x),1:size(data{9}{data{10}(1).Channel_Master}{2,9},1),'uniformoutput',0)])
 set(handle.ChannelMenu,'value',Channel_Choice)
 set(handle.DisplayModeMenu,'value',Current_Display)
 ChangeDisplay(handle.fh,[],7)
+    end
 end
 
 for i=1:3

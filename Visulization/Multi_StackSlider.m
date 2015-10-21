@@ -2,6 +2,8 @@ function [] = Multi_StackSlider(varargin)
 data=guidata(varargin{1});
 S.MChan=data{10}(1).Channel_Master;
 S.data=data{9};
+S.metadata=data{10};
+
 S.ROI=1;
 S.IntensityMod=[1,1,1,1];
 S.Overlay_Mod=[0,0,0,0];
@@ -222,6 +224,7 @@ switch h
         S.IntensityMod(ismember(S.Int,h))=str2double(get(h,'string'));
 
 end
+
 imPlane=get(S.sl1,'value');
 mROI=get(S.sl2,'value');
 S=setROI(S,mROI,imPlane);
@@ -245,30 +248,26 @@ S.CornerX=S.data{S.MChan}{2,9}{ROI,3}(2)+1;
 S.CornerY=S.data{S.MChan}{2,9}{ROI,3}(1)+1;
 S.Height=S.data{S.MChan}{2,9}{ROI,4}(2)-1;
 S.Width=S.data{S.MChan}{2,9}{ROI,4}(1)-1;
+for i=1:numel(S.data)
+    if i==S.MChan
+        Region_Obj=mROI_Obj([cell(1,8),{S.data},S.metadata],S.ROI);
+        Final_Perm=Region_Obj.getmROI_Image(i,'Perimeter');
+        Final_Perm=cat(3,Final_Perm,bwperim(max(Final_Perm,[],3)));
+        S.Perim=Final_Perm;
+    end
+end
 
 for i=1:numel(S.data)
-    FS=S.data{S.MChan}{2,7}(ROI,:)-S.data{S.MChan}{2,9}{ROI,3}+[1,1,2];
-    S.Mask=S.data{S.MChan}{2,6}{ROI,1};
-    for j=1:size(S.Mask,3)
-        PermImage(:,:,j)=imfill(S.Mask(:,:,j),'holes'); %#ok<AGROW>
-    end
-    SZ=size(PermImage)-1;
-    [PermImage]=bwperim(logical(PermImage));
-    Final_Perm=false(size(S.data{i}{1,2}(S.CornerX:S.CornerX+S.Width,S.CornerY:S.CornerY+S.Height,:)));
-    Final_Perm(FS(2):FS(2)+SZ(1),FS(1):FS(1)+SZ(2),FS(3):FS(3)+SZ(3))=PermImage;
-    Final_Perm(FS(2):FS(2)+SZ(1),FS(1):FS(1)+SZ(2),size(Final_Perm,3)+1)=PermImage(:,:,round(size(PermImage,3)/2)); 
-    S.Perim=Final_Perm;
-end    
-    
-for i=1:numel(S.data)
-    S.I{i}=S.data{i}{1,2}(S.CornerX:S.CornerX+S.Width,S.CornerY:S.CornerY+S.Height,:)*S.IntensityMod(i);
+Region_Obj=mROI_Obj([cell(1,8),{S.data},S.metadata],S.ROI);
+    S.I{i}=Region_Obj.getmROI_Image(i,'Intensity')*S.IntensityMod(i);
     S.I{i}(:,:,size(S.I{i},3)+1)=max(S.I{i},[],3);
-    S.Ib{i}=logical(S.data{i}{2,2}(S.CornerX:S.CornerX+S.Width,S.CornerY:S.CornerY+S.Height,:));
+    S.Ib{i}=Region_Obj.getmROI_Image(i,'Binary');
     S.Ib{i}(:,:,size(S.Ib{i},3)+1)=max(S.Ib{i},[],3);
     S.staticI{i}=S.I{i};
     S.Ib{i}=(squeeze(S.Ib{i}(:,:,imPlane)));
     S.I{i}=(squeeze(S.I{i}(:,:,imPlane)));
     S.I{i}=repmat(S.I{i},[1,1,3]);
+
     if get(S.maskpopup,'value')==2
         S.I{i}(:,:,1)= S.I{i}(:,:,1)+(uint8(S.Perim(:,:,imPlane))*255);
         S.I{i}(:,:,2)= S.I{i}(:,:,2)+(uint8(S.Perim(:,:,imPlane))*255);
@@ -291,18 +290,20 @@ Mode=varargin{5};
 S=guidata(varargin{3}.fh);
 
 if get(S.ViewComp,'value')==0
-        Comp_Controller=get(findobj(0,'tag','Snapshot_Control'),'userdata');
-try
-    close(Comp_Controller.fh)
-catch
-end
-    else
+    Comp_Controller=get(findobj(0,'tag','Snapshot_Control'),'userdata');
+    try
+        close(Comp_Controller.fh)
+    catch
+    end
+else
+
     if Mode==1
         Comp_Controller=SnapShot_Builder(varargin{4},varargin{3});
     else
         Comp_Controller=get(findobj(0,'tag','Snapshot_Control'),'userdata');
+    Comp_Controller=Comp_Controller{1,1};
     end
-    
+
     data=guidata(varargin{4});
     set(Comp_Controller.Capture,'visible','off')
     set(Comp_Controller.SliceMenu,'enable','off')
@@ -349,6 +350,7 @@ end
         
     end
     set(Comp_Controller.fh,'userdata',Comp_Controller)
+    %}
     if Mode==1
         C.Image_Window=figure('tag','Comp_Window','visible','off');
         C.Parent_Ax = axes('units','normalized','parent',C.Image_Window,...
@@ -360,7 +362,9 @@ end
         set(C.Image_Window,'userdata',C)
     else
         C=get(findobj(0,'tag','Comp_Window'),'userdata')    ;
+        C=C{1,1};
     end
+    
     Generate_SnapShot(1,1,Comp_Controller,data,C)
 end
 

@@ -1,3 +1,4 @@
+
 function data=Occupancy(varargin)
 
 Mode=varargin{3};
@@ -68,6 +69,8 @@ switch Mode
     case 3
         %'Inside Hull (Convex)'
         set(Control.Simulate,'callback',{@cHull,Shifted_PixelList,Shifted_permPixelList,Cali,data})
+    case 4
+        set(Control.Simulate,'callback',{@wiggle,Shifted_PixelList,Shifted_permPixelList,Cali,data},'userdata',Control)
 
         
 end
@@ -261,6 +264,52 @@ set(data{1}.fh,'visible','on')
 close(Control.fh)
 guidata(data{1}.fh,data);
 end
+
+function [] = wiggle(varargin)
+
+
+[Shifted_PixelList,Shifted_permPixelList,Cali,data]=varargin{[3,4,5,6]};
+MChan=data{10}(1).Channel_Master;
+Control=get(varargin{1},'userdata');
+numPoints=str2double(get(Control.SimPoints,'string'));
+
+Start_Time=clock;
+Internal_Points=cell(size(Shifted_PixelList,1),1);
+for i=1:size(Shifted_PixelList,1)
+    Loop_Start_Time=clock;
+    display(sprintf('Wiggling Points for mROI: %d of %d',i,size(Shifted_PixelList,1)))
+    Wiggle_Points=zeros(size(Shifted_PixelList{i,1},1),3);
+    for j=1:size(Shifted_PixelList{i,1},1)
+        if Rand_inRange(0,1,1,.01)>=.5
+            Wiggle_Points(j,1)=Shifted_PixelList{i,1}(j,1)+ Rand_inRange(0,Cali.X/2,1,.00001);
+        else
+            Wiggle_Points(j,1)=Shifted_PixelList{i,1}(j,1)- Rand_inRange(0,Cali.X/2,1,.00001);
+        end
+        if Rand_inRange(0,1,1,.01)>=.5
+            Wiggle_Points(j,2)=Shifted_PixelList{i,1}(j,2)+ Rand_inRange(0,Cali.Y/2,1,.00001);
+        else
+            Wiggle_Points(j,2)=Shifted_PixelList{i,1}(j,2)- Rand_inRange(0,Cali.Y/2,1,.00001);
+        end
+        if Rand_inRange(0,1,1,.01)>=.5
+            Wiggle_Points(j,3)=Shifted_PixelList{i,1}(j,3)+ Rand_inRange(0,Cali.Z/2,1,.00001);
+        else
+            Wiggle_Points(j,3)=Shifted_PixelList{i,1}(j,3)- Rand_inRange(0,Cali.Z/2,1,.00001);
+        end
+    end
+    Internal_Points{i,1}=Wiggle_Points(randsample(size(Wiggle_Points,1),numPoints,0),:);
+    
+    Loop_End_Time=clock;
+    display(sprintf('Loop Computation time(min): %0.2f' ,etime(Loop_End_Time,Loop_Start_Time)/60))
+    display(sprintf('Total Computation time(min): %0.2f' ,etime(Loop_End_Time,Start_Time)/60))
+end
+close(Control.fh)
+
+data{9}{MChan}{2,9}(:,6)=Internal_Points;
+set(data{1}.fh,'visible','on')
+guidata(data{1}.fh,data);
+end
+
+
 
 function Random_Point=Rand_inRange(min_Val,max_Val,NumPoints,Decimal_Place)
 min_Val=double(min_Val)/Decimal_Place;
