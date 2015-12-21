@@ -8,7 +8,7 @@ classdef mROI_Obj < handle
         Calibration
         mROI_Size
         NN_Sim
-        LI_Sim
+        W_Sim
         cHull_Sim
         mROI_Name
         Channel_Name
@@ -69,7 +69,6 @@ classdef mROI_Obj < handle
             obj.FrameShift(Del_Index)=[];
             obj.whole_Intensity(Del_Index)=[];
             obj.whole_Binary(Del_Index)=[];
-            obj.FrameShift(Del_Index)=[];
             obj.NumChan=sum(~Del_Index);
             obj.Channel_Num=1:numel(data{9});
             Channel_ID=cell(1,numel(data{9}));
@@ -80,7 +79,7 @@ classdef mROI_Obj < handle
             obj.Channel_Num=obj.Channel_Num(~Del_Index);
             
             Names=[{'NN_Sim'},...
-                {'LI_Sim'},...
+                {'W_Sim'},...
                 {'cHull_Sim'}];
             for i=1:3
                 try
@@ -89,7 +88,8 @@ classdef mROI_Obj < handle
                     obj.(Names{i})=false;
                 end
             end
-            obj.mROI_Name=sprintf('%s %s:mROI %d:',data{10}(1).Image_ID,data{10}(1).Image_Number,mROI_Number);
+            
+            obj.mROI_Name=sprintf('%s %s:mROI %d:',data{10}(1).Image_ID,num2str(data{10}(1).Image_Number),mROI_Number);
             
         end
     end
@@ -125,8 +125,10 @@ classdef mROI_Obj < handle
                 case 'Intensity'
                     Int_Images=obj.whole_Intensity(obj.Channel_Num==Chan);
                     FS=obj.mROI_FS;
+                    
                     mROI_Image=makemROI_Image(obj,Int_Images,FS);
-                case 'Binary'
+
+                    case 'Binary'
                     Int_Images=obj.Binary{obj.Channel_Num==Chan}(:,1);
                     FS=obj.FrameShift{obj.Channel_Num==Chan};
                     mROI_Image=makemROI_Image(obj,Int_Images,FS);
@@ -154,6 +156,13 @@ classdef mROI_Obj < handle
                     error('Invalid Type:  See Docs')
             end
             
+            try
+                if strcmp(varargin{2},'Pad')
+                    mROI_Image = cat(3,repmat(false(size(max(mROI_Image,[],3))),[1,1,obj.mROI_FS(3)-1]),...
+                        mROI_Image,...
+                        repmat(false(size(max(mROI_Image,[],3))),[1,1,size(obj.whole_Intensity{1,1},3)-size(mROI_Image,3)-obj.mROI_FS(3)+1]));
+                end
+            end
         end
         function PixelList=getPixel_List(obj,Chan,Type,Units)
             %Units:  'Micron', Returns Coordinants in Microns
@@ -161,6 +170,7 @@ classdef mROI_Obj < handle
             %Type:  'Perimeter', Return Perimeter Pixels
             %Type:  'Whole', Returns all Pixels
             %Type:  'Centroid', Returns Intensity Weighted Centroid Pixel
+           
             switch Type
                 case 'Perimeter'
                     Images=obj.getPerm_Image(Chan,'ByObj');
@@ -173,70 +183,91 @@ classdef mROI_Obj < handle
                     display('Input Order: Chan,Type,Units')
                     error('Invalid Type:  See Docs')
             end
-            FS=obj.FrameShift{obj.Channel_Num==Chan};
-            PixelList=cell(size(Images,1),1);
-            if strcmp(Type,'Centroid')
-                All_Pix=arrayfun(@(x) mean(x{1},1),obj.getPixel_List(Chan,'Whole','Voxel'),'uniformoutput',0);
-                All_Pix=vertcat(All_Pix{:});
-                for i=1:size(All_Pix,1)
-                    PL(i,1) = regionprops(obj.getmROI_Image(Chan,'Label',i), obj.getmROI_Image(Chan,'Intensity'), {'Centroid','WeightedCentroid','pixellist'});
+            
+            if isempty(Images)
+                PixelList={};
+            else
+                FS=obj.FrameShift{obj.Channel_Num==Chan};
+                PixelList=cell(size(Images,1),1);
+                if strcmp(Type,'Centroid')
+                    All_Pix=arrayfun(@(x) mean(x{1},1),obj.getPixel_List(Chan,'Whole','Voxel'),'uniformoutput',0);
+                    All_Pix=vertcat(All_Pix{:});
+                    PL=repmat(struct('Centroid',[],'WeightedCentroid',[],'PixelList',[]),size(All_Pix,1),1);
+                    for i=1:size(All_Pix,1)
+                        tpl=regionprops(obj.getmROI_Image(Chan,'Label',i), obj.getmROI_Image(Chan,'Intensity'), {'Centroid','WeightedCentroid','pixellist','pixelvalues'});
+                        PL(i,1).PixelList=vertcat(tpl.PixelList);
+                        PL(i,1).Centroid=mean(PL(i,1).PixelList);
+                        PL(i,1).WeightedCentroid=sum(double(vertcat(tpl.PixelList).*double(repmat(vertcat(tpl.PixelValues),1,size(tpl(1).PixelList,2)))))./repmat(sum(double(vertcat(tpl.PixelValues))),1,size(tpl(1).PixelList,2));
+                        if size(PL(i,1).Centroid,2)==2
+                            PL(i,1).PixelList=[PL(i,1).PixelList,ones(size(PL(i,1).PixelList,1),1)];
+                            PL(i,1).Centroid=[PL(i,1).Centroid,ones(size(PL(i,1).Centroid,1),1)];
+                            PL(i,1).WeightedCentroid=[PL(i,1).WeightedCentroid,ones(size(PL(i,1).WeightedCentroid,1),1)];
+                        end
+                    end
+                end
+                    
+                    for i=1:numel(PL)
+                        [~,I]=min(pdist2(PL(i).WeightedCentroid,All_Pix));
+                        if  ismember(All_Pix(I,:),All_Pix(i,:),'rows')
+                            PL(i).PixelList=PL(i).WeightedCentroid;
+                        else
+                            PL(I).PixelList=PL(i).WeightedCentroid;
+                        end
+                    end
+                    if size(PL,1)~=size(vertcat(PL.PixelList),1)
+                        error('Inproper Centroid Assignment')
+                    end
+                    
+                else
+                    PL=struct('PixelList',[]);
+                    repmat(PL,size(Images,1),1);
+                    for i=1:size(Images,1)
+                        
+                        tPL=regionprops(Images{i,1},'pixellist');
+                        PL(i,1).PixelList=vertcat(tPL.PixelList);
+                        if size(PL(i,1).PixelList,2)~=size(FS,2)
+                            PL(i,1).PixelList=[PL(i,1).PixelList,ones(size(PL(i,1).PixelList,1),1)];
+                        end
+                        
+                        PL(i).PixelList=PL(i).PixelList+repmat(FS(i,:),size(PL(i).PixelList,1),1);
+                    end
                     
                 end
                 for i=1:numel(PL)
-                    [~,I]=min(pdist2(PL(i).WeightedCentroid,All_Pix));
-                    PL(I).PixelList=PL(i).WeightedCentroid;
-                end
-                if size(PL,1)~=size(vertcat(PL.PixelList),1)
-                    error('Inproper Centroid Assignment')
-                end
-                
-            else
-                PL=struct('PixelList',[]);
-                repmat(PL,size(Images,1),1);
-                for i=1:size(Images,1)
-                    PL(i,1)=regionprops(Images{i,1},'pixellist');
-                    if size(PL(i,1).PixelList,2)~=size(FS,2)
-                        PL(i,1).PixelList=[PL(i,1).PixelList,ones(size(PL(i,1).PixelList,1),1)];
+                    tPL=PL(i).PixelList;
+                    switch Units
+                        case 'Microns'
+                            PixelList{i,1}=tPL.*repmat(obj.Calibration,size(tPL,1),1);
+                        case 'Voxel'
+                            PixelList{i,1}=tPL;
+                        otherwise
+                            error('Invalid Units:  See Docs')
                     end
-                    PL(i).PixelList=PL(i).PixelList+repmat(FS(i,:),size(PL(i).PixelList,1),1);
                 end
                 
             end
-            for i=1:numel(PL)
-                tPL=PL(i).PixelList;
-                switch Units
-                    case 'Microns'
-                        PixelList{i,1}=tPL.*repmat(obj.Calibration,size(tPL,1),1);
-                    case 'Voxel'
-                        PixelList{i,1}=tPL;
-                    otherwise
-                        error('Invalid Units:  See Docs')
-                end
-            end
-            
-            
         end
         function obj=Make_2D(obj)
             for i=1:obj.NumChan
                 for j=1:size(obj.Binary{obj.Channel_Num(i)},1)
                     obj.Binary{obj.Channel_Num(i)}{j,1}=max(obj.Binary{obj.Channel_Num(i)}{j,1},[],3);
                     obj.Intensity{obj.Channel_Num(i)}{j,1}=max(obj.Intensity{obj.Channel_Num(i)}{j,1},[],3);
-                    obj.Binary{obj.Channel_Num(i)}{j,4}(:,3)=0;
+                    obj.Binary{obj.Channel_Num(i)}{j,4}(:,3)=1;
                     obj.FrameShift{obj.Channel_Num(i)}(:,3)=0;
                 end
                 obj.whole_Intensity{1,i}=max(obj.whole_Intensity{1,i},[],3);
                 obj.whole_Binary{1,i}=max(obj.whole_Binary{1,i},[],3);
                 
             end
-            obj.mROI_FS(3)=0;
+            obj.mROI_FS(3)=1;
             obj.mROI_Size(3)=1;
             obj.Calibration(3)=1;
             Names=[{'NN_Sim'},...
-                {'LI_Sim'},...
+                {'W_Sim'},...
                 {'cHull_Sim'}];
 
             for i=1:3
-                if  obj.(Names{i})==0;
+                if  isa(obj.(Names{i}),'logical')
                 else
                     obj.(Names{i}){1,1}=[unique(obj.(Names{i}){1,1}(:,1:2),'rows'),ones(size(unique(obj.(Names{i}){1,1}(:,1:2),'rows'),1),1)];
                 end
@@ -254,39 +285,65 @@ classdef mROI_Obj < handle
             obj.Channel_Num=obj.Channel_Num(~ismember(obj.Channel_Num,Chan));
             obj.NumChan=obj.NumChan-1;
         end
-        function obj=Group_Signals(obj,Chan,Group_Number)
+        function obj=Group_Signals(obj,Chan,Group_Number,Force)
+            
             Chan_Index=ismember(obj.Channel_Num,Chan);
             Combo_Obj=obj.Binary(Chan_Index);
+            
+            
             Binary_Combo=Combo_Obj{1};
+            
             Combo_Obj=obj.Intensity(Chan_Index);
             Int_Combo=Combo_Obj{1};
             Int_Image=obj.getmROI_Image(Chan,'Intensity');
+            if size(Binary_Combo,1)<Group_Number && Force(1)==1
+                Obj_Size=arrayfun(@(x) sum(sum(sum(x{1}))),obj.Binary{Chan_Index}(:,1));
+                [~,I]=sort(Obj_Size,'descend');
+                if ~isempty(I)
+                Duplication_Events=Group_Number-size(Binary_Combo,1);
+                I=repmat(I,Duplication_Events,1);
 
-            New_Group_Index=kmeans(vertcat(Binary_Combo{:,4}),Group_Number);
-            New_Binary=cell(Group_Number,4);
-            New_Int=cell(Group_Number,2);
-            New_FS=zeros(Group_Number,3);
-            for i=1:Group_Number
-                if sum(New_Group_Index==i)==1
-                New_Binary(i,:)=Binary_Combo(New_Group_Index==i,:);
-                New_Int(i,:)=Int_Combo(New_Group_Index==i,:);
-                New_FS(i,:)=obj.FrameShift{Chan_Index}(New_Group_Index==i,:);
-                else
-                    New_Binary{i,1}=obj.makemROI_Image(Binary_Combo(New_Group_Index==i,1),obj.FrameShift{Chan_Index}(New_Group_Index==i,:));
-                New_Binary{i,2}=max(New_Binary{i,1},[],3);
-                New_Binary{i,3}=obj.mROI_Code;
-                RP=regionprops(New_Binary{i,1},'pixellist');
-                New_Binary{i,4}=mean(vertcat(RP.PixelList))+obj.mROI_FS-[1,1,1];
-                New_FS(i,:)=[0,0,0];
-                New_Int{i,1}=Int_Image-(uint8(~New_Binary{i,1})*255);
-                New_Int{i,2}=max( New_Int{i,1},[],3);
+                obj.Binary{Chan_Index}=[obj.Binary{Chan_Index};obj.Binary{Chan_Index}(I(1:Duplication_Events),:)];
+                obj.Intensity{Chan_Index}=[obj.Intensity{Chan_Index};obj.Intensity{Chan_Index}(I(1:Duplication_Events),:)];
+                obj.FrameShift{Chan_Index}=[obj.FrameShift{Chan_Index};obj.FrameShift{Chan_Index}(I(1:Duplication_Events),:)];
                 end
                 
+            elseif Force(2)==1 && size(Binary_Combo,1)>=Group_Number
+
+                New_Group_Index=kmeans(vertcat(Binary_Combo{:,4}),Group_Number);
+                New_Binary=cell(Group_Number,4);
+                New_Int=cell(Group_Number,2);
+                New_FS=zeros(Group_Number,3);
                 
+                for i=1:Group_Number
+                    if sum(New_Group_Index==i)==1
+                        New_Binary(i,:)=Binary_Combo(New_Group_Index==i,:);
+                        New_Int(i,:)=Int_Combo(New_Group_Index==i,:);
+                        New_FS(i,:)=obj.FrameShift{Chan_Index}(New_Group_Index==i,:);
+                    else
+                        
+                        New_Binary{i,1}=obj.makemROI_Image(Binary_Combo(New_Group_Index==i,1),obj.FrameShift{Chan_Index}(New_Group_Index==i,:));
+                        New_Binary{i,2}=max(New_Binary{i,1},[],3);
+                        New_Binary{i,3}=obj.mROI_Code;
+                        RP=regionprops(New_Binary{i,1},'pixellist');
+                        if numel(mean(vertcat(RP.PixelList)))==2
+                            Centroid=[(mean(vertcat(RP.PixelList))),1];
+                        else
+                            Centroid=(mean(vertcat(RP.PixelList)));
+                        end
+                        New_Binary{i,4}=Centroid+obj.mROI_FS-[1,1,1];
+                        New_FS(i,:)=[0,0,0];
+                        New_Int{i,1}=Int_Image-(uint8(~New_Binary{i,1})*255);
+                        New_Int{i,2}=max( New_Int{i,1},[],3);
+                    end
+                    
+                    
+                end
+                obj.Binary{Chan_Index}=New_Binary;
+                obj.Intensity{Chan_Index}=New_Int;
+                obj.FrameShift{Chan_Index}=New_FS;
+            else
             end
-            obj.Binary{Chan_Index}=New_Binary;
-            obj.Intensity{Chan_Index}=New_Int;
-            obj.FrameShift{Chan_Index}=New_FS;
         end
         
         function [Group_Cluster_Ids,Cluster_Centroids]=findClusters(obj,Seed_Number,Cluster_Chans,Type)
@@ -404,6 +461,7 @@ Cluster_Chans=obj.Channel_Num(ismember(obj.Channel_Num,Cluster_Chans));
             
         end
         function Image=makemROI_Image(obj,Images,FS)
+
             if isa(Images{1,1},'logical')
                 Image=false(obj.mROI_Size*2);
                 FS=FS+1;
@@ -418,6 +476,7 @@ Cluster_Chans=obj.Channel_Num(ismember(obj.Channel_Num,Cluster_Chans));
                 end
                 Image=Image(1:obj.mROI_Size(1),1:obj.mROI_Size(2),1:obj.mROI_Size(3));
             else
+                
                 Image=Images{1,1}(FS(1,2):FS(1,2)+obj.mROI_Size(1)-1,...
                     FS(1,1):FS(1,1)+obj.mROI_Size(2)-1,...
                     FS(1,3):FS(1,3)+obj.mROI_Size(3)-1) ;

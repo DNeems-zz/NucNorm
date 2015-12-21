@@ -114,8 +114,10 @@ end
         
         set(H.DisplayModeMenu,'value',2)
         data{9}{Current_Chan}=data{9}{Current_Chan}(1:2,:);
-
-        Manipulation_PostProcess(FSS_data,vertcat(delta_ROIs,Add),data,'Modify')
+        New_Data=[{FSS_data{1}(end-(size(Add_ROIs{1},1)-1):end,:)},...
+            {FSS_data{2}(end-(size(Add_ROIs{2},1)-1):end,:)},...
+            {FSS_data{3}(end-(size(Add_ROIs{3},1)-1):end,:)}];
+        Manipulation_PostProcess(New_Data,vertcat(delta_ROIs,Add),data,'Modify')
         Temp_Menu=get(H.DisplayModeMenu,'String');
         Temp_Menu{2}=strcat(Temp_Menu{2},'*');
         set(H.DisplayModeMenu,'String',Temp_Menu(1:2));
@@ -189,6 +191,7 @@ if isempty(BaseData{9}{Chan})
 else
     
 end
+
 if BaseData{1}.MasterSet_Toggle==1
     [BaseData]=Map_New_mROI(BaseData);
 end

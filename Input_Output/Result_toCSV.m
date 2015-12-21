@@ -2,6 +2,7 @@ function [Path,Filenames]=Result_toCSV(data,Path)
 DataSets=data{1,1};
 
 Filenames=cell(numel(DataSets),1);
+
 Ref_Point=regexp(data{2,1},': ','split');
     warning('off','MATLAB:DELETE:FileNotFound')
         warning('off', 'MATLAB:xlswrite:AddSheet')
@@ -11,7 +12,9 @@ for i=1:numel(DataSets)
         {'Referance Chan:'},{' '},...
         {'Analysis Chan:'},{' '},...
         sprintf('%s to',data{2,1}),{' '}];
+
     [Base,Ref,Ana]=SplitName(DataSets{i}.Properties.ObsNames{1,1});
+
     Info_Header{1,2}=Base; Info_Header{1,4}=Ref;
     Info_Header{1,6}=Ana; Info_Header{1,8}=DataSets{i}.Properties.Description;
     Data_Header=DataSets{i}.Properties.UserData;
@@ -21,8 +24,11 @@ for i=1:numel(DataSets)
 
     Filenames{i,1}=sprintf('%s_%s-%s %s %s to %s.csv',Base,Ref,Ana,Ref_Point{1},Ref_Point{2},DataSets{i}.Properties.Description);
     Filenames{i,1}=strcat(Path,'\',Filenames{i,1});
-     delete(Filenames{i,1})
-    fid = fopen(Filenames{i,1},'w');
+    fid = fopen(Filenames{i,1},'w+');
+    %invalid File Name
+    if fid==-1
+        keyboard
+    end
     numColumns_Info_Header = size(Info_Header,2);
     numColumns_Output_Data = size(Output_Data,2);
     % use repmat to construct repeating formats
@@ -38,7 +44,18 @@ for i=1:numel(DataSets)
     end
     fclose(fid);    
 end
+
 Input_Table=cell(numel(DataSets),1);
+Contents=dir(Path);
+cNames=cell(numel(Contents),1);
+for j=1:numel(Contents)
+cNames{j,1}=Contents(j).name;
+end
+BaseName=sprintf('%s %s-%s',Base,Ref_Point{1},Ref_Point{2});
+toDelete=cNames(~cellfun(@isempty ,arrayfun(@(x) regexp(x,BaseName),cNames)),:);
+for j=1:numel(toDelete)
+delete(strjoin([Path,toDelete(j)],'/'))
+end
 for i=1:numel(DataSets)
     display(sprintf('Writing XLS Sheet %d/%d',i,numel(DataSets)));
     Input_Table{i,1}=readCSV(Filenames{i,1});
@@ -52,23 +69,28 @@ SP=regexp(DataSets{i}.Properties.Description,'-','split');
         Input_Table{i,1},...
         Sheet_Name);  
 end
+Mat_Name=strcat(Path,'/',sprintf('%s %s-%s %s.mat',Base,Ref_Point{1},Ref_Point{2},date));
+save(Mat_Name,'DataSets');
 zip(strcat(Path,'/',sprintf('%s %s-%s %s',Base,Ref_Point{1},Ref_Point{2},date)),Filenames);
 for i=1:numel(Filenames);
     delete(Filenames{i,1})
 end
 end
 
-function [Base,Ref,Ana]=SplitName(FullName)
-    Image_Name=regexp(FullName,'::','split');
-    Base_Name=regexp(Image_Name{1},':','split');
-    Base=Base_Name{1};
-    Image_Name=regexp(Image_Name{2},' to ','split');
-
-    Ref=regexp(Image_Name{1},'_','split');
-    Ref=Ref{1};
+function [Base,Ref,Ana]=SplitName(FullName)    
+Image_Name=regexp(FullName,'::','split');
+Base_Name=regexp(Image_Name{1},':','split');
+Base=Base_Name{1};
+Image_Name=regexp(Image_Name{2},' to ','split');
+Ref=regexp(Image_Name{1},'_','split');
+Ref=Ref{1};
+if numel(Image_Name)==1
+    Ana=regexp(Image_Name{1},'_','split');
+    Ana=Ana{1};
+else
     Ana=regexp(Image_Name{2},'_','split');
     Ana=Ana{1};
-    
+end
 end
 function [Table]=readCSV(Filename)
 

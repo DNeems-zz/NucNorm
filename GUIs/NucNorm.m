@@ -1,4 +1,4 @@
-function [] = NucNorm(varargin)
+function [Image] = NucNorm(varargin)
 %% Intialize feautres of the GUI
 BlankImage=uint8(zeros(1024,1024));
 Image.fh = figure('units','normalized',...
@@ -164,7 +164,10 @@ Image.ThrMenu.Seg.Integral=uimenu(Image.ThrMenu.Segementation,'Label','Integral'
 %Image.ThrMenu.Seg.Bright=uimenu(Image.ThrMenu.Segementation,'Label','Automatic: Bright','callback',{@ThreshGUI,'Bright'},'UserData',5);
 %Image.ThrMenu.Seg.Dark=uimenu(Image.ThrMenu.Segementation,'Label','Automatic: Dark','callback',{@ThreshGUI,'Dark'},'UserData',6);
 Image.ThrMenu.Seg.RegGrow=uimenu(Image.ThrMenu.Segementation,'Label','Region Growing');
-Image.ThrMenu.RG.Auto=uimenu(Image.ThrMenu.Seg.RegGrow,'Label','Automatic','callback',{@ThreshPortalGUI,'Growth','Auto'},'UserData',7);
+Image.ThrMenu.RG.Auto=uimenu(Image.ThrMenu.Seg.RegGrow,'Label','Automatic');
+Image.ThrMenu.RG.Background=uimenu(Image.ThrMenu.RG.Auto,'Label','Background Subtraction','callback',{@ThreshPortalGUI,'Growth','Auto',2},'UserData',7);
+Image.ThrMenu.RG.ForeGround=uimenu(Image.ThrMenu.RG.Auto,'Label','Bright ID','callback',{@ThreshPortalGUI,'Growth','Auto',1},'UserData',7);
+
 Image.ThrMenu.RG.BackGround=uimenu(Image.ThrMenu.Seg.RegGrow,'Label','Background Subtraction','callback',{@ThreshPortalGUI,'Growth','BGSub'},'UserData',7);
 Image.ThrMenu.RG.Pick=uimenu(Image.ThrMenu.Seg.RegGrow,'Label','Pick Seeds','callback',{@ThreshPortalGUI,'Growth','Pick'},'UserData',7);
 
@@ -185,7 +188,7 @@ Image.ThrMenu.Redo=uimenu(Image.ThreshMenu,'Label','Redo','callback',{@Undo_Redo
 %Analysis Menus
 Image.AnaMenu = uimenu('Label','Anaylsis');
 Image.AMenu.Geo=uimenu(Image.AnaMenu,'Label','Geometric Methods');
-%Image.AMenu.GeoDes=uimenu(Image.AMenu.Geo,'Label','Descriptors','callback',{@AnaylsisPortalGUI,'Geo',1});
+Image.AMenu.GeoDes=uimenu(Image.AMenu.Geo,'Label','Shape Descriptors','callback',{@AnaylsisPortalGUI,'Geo',2});
 Image.AMenu.Between_Among=uimenu(Image.AMenu.Geo,'Label','Between/Among','callback',{@AnaylsisPortalGUI,'Geo',1});
 Image.AMenu.Shell=uimenu(Image.AMenu.Geo,'Label','Shells','callback',{@AnaylsisPortalGUI,'Geo',4});
 
@@ -308,6 +311,10 @@ if Current_mROI==1
     Shift=[0 0 0];
 else
     Shift=data{9}{MChan}{2,9}{Current_mROI-1,3};
+    [Pull_Index]=Find_RowPull(Mod_ROIs{2}(:,3),data{9}{MChan}{2,9}{Current_mROI-1,2});
+    for i=1:3
+    Mod_ROIs{i}=Mod_ROIs{i}(Pull_Index,:);
+    end
 end
 
 
@@ -381,13 +388,14 @@ switch varargin{3}
         %Make a Single Unqiue Association
     case 4
 
-        NewImage=false(H.IMSize);
+        NewImage=zeros(H.IMSize);
         for i=1:size(FSS_data{2},1);
             FS=FSS_data{3}(i,:);
             FS=FS+1;
             [W,h,D]=size(FSS_data{2}{i,1});
-            NewImage(FS(2):FS(2)+W-1,FS(1):FS(1)+h-1,FS(3):FS(3)+D-1)=FSS_data{2}{i,1};
+            NewImage(FS(2):FS(2)+W-1,FS(1):FS(1)+h-1,FS(3):FS(3)+D-1)=NewImage(FS(2):FS(2)+W-1,FS(1):FS(1)+h-1,FS(3):FS(3)+D-1)+FSS_data{2}{i,1};
         end
+        NewImage=logical(NewImage);
         [data]=Add_Data(data,2,...
             {NewImage},...
             Channel_Choice,Display_Choice);

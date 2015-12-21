@@ -63,6 +63,7 @@ switch Mode
     case 'Hull Dist'
     case 'Future'
 end
+
 %Adding the index of the newly split objects should be universal 
 delIndex=Split_ROI{2}{3};
 [BaseImage,New_ROIs]=Assign_mROI(BaseImage,New_ROIs,data);
@@ -115,7 +116,8 @@ numRegions=inputdlg(prompt,name,numlines,defaultanswer);
 numRegions=str2double(numRegions{1});
 
 New_ROIs=cell(numRegions,1);
-BaseImage=cell(numRegions,3);
+BaseImage=cell(numRegions,4);
+
 for i=1:numRegions
     [bigimMAP,~]=roipoly(imresize(Image,4));
     imMAP=repmat(imresize(bigimMAP,.25),[1,1,size(Split_ROI{1,2}{1,2},3)]);
@@ -124,7 +126,7 @@ for i=1:numRegions
     New_ROIs{i,1}=regionprops(logical(uint8(Split_ROI{1,2}{1,1})*255-( uint8(~imMAP)*255)),'image','pixellist','boundingbox');
     BaseImage{i,1}=Split_ROI{1,1}{1,1}-( uint8(~imMAP)*255);
     BaseImage{i,3}=Split_ROI{3}-Split_ROI{1,4};
-    
+      BaseImage{i,4}=Split_ROI{2}{3};
 end
 close(h)
 end
@@ -174,31 +176,42 @@ Add_BackPix=vertcat(Add_BackPix.PixelList);
 Label_Image=labelmatrix(bwconncomp(Empty_Image));
 Num_Regions=max(max(max(Label_Image)));
 Indvl_Regions=regionprops(logical(Empty_Image),Label_Image,'centroid','pixellist');
+
 for i=1:Num_Regions
     Group_Num=Empty_Image(Indvl_Regions(i).PixelList(1,2),Indvl_Regions(i).PixelList(1,1),Indvl_Regions(i).PixelList(1,3));
 Indvl_Regions(i).Group=Group_Num;
 end
+
+for i=1:Num_Regions
+Label_Image(Label_Image==i)=Indvl_Regions(i).Group;
+end
 Pix_Group=zeros(size(Add_BackPix,1),1);
 Indvl_Cent=vertcat(Indvl_Regions.Centroid);
 Indvl_Group_ID=vertcat(Indvl_Regions.Group);
+
 for i=1:size(Add_BackPix,1)
     [~,I]=(sort(pdist2(Indvl_Cent,Add_BackPix(i,:)),'ascend'));
-    Pix_Group(i,1)=round(mean(Indvl_Group_ID(I(1:5),1)));
+    Pix_Group(i,1)=round(mode(Indvl_Group_ID(I(1:5),1)));
 end
 
 for i=1:size(Pix_Group,1)
     Empty_Image(Add_BackPix(i,2),Add_BackPix(i,1),Add_BackPix(i,3))=Pix_Group(i,1);
 end
 
-ROI_Struct=regionprops(Empty_Image,'image','pixellist','boundingbox');
 New_ROIs=cell(numRegions,1);
 BaseImage=cell(numRegions,3);
 for i=1:numRegions
-    New_ROIs{i,1}=ROI_Struct(i);
+tImage=Empty_Image;
+tImage(tImage~=i)=0;
+    ROI_Struct=regionprops(logical(tImage),'image','pixellist','boundingbox','area');
+    [~,I]=max([ROI_Struct.Area]);
+    ROI_Struct=ROI_Struct(I,:);
+ 
+    New_ROIs{i,1}=ROI_Struct;
     tImage=false(size(GrayScale_Image));
     
-    for j=1:size(ROI_Struct(i).PixelList,1)
-    tImage(ROI_Struct(i).PixelList(j,2),ROI_Struct(i).PixelList(j,1),ROI_Struct(i).PixelList(j,3))=1;
+    for j=1:size(ROI_Struct.PixelList,1)
+    tImage(ROI_Struct.PixelList(j,2),ROI_Struct.PixelList(j,1),ROI_Struct.PixelList(j,3))=1;
     end
     BaseImage{i,1}=GrayScale_Image-(uint8(~tImage)*255);
     
@@ -236,6 +249,13 @@ else
         end
     else
         %Map New split objects into the appoperaite master
+       for i=1:size(New_ROIs,1)
+            for j=1:size(New_ROIs{i,1})
+                New_ROIs{i,1}(j).RegionNum=BaseImage{i,4};
+            end
+        BaseImage{i,2}=BaseImage{i,4};
+        end
+        %{
         PolyGons=data{9}{data{10}(1).Channel_Master}{2,9}(:,1);
         Cetroids=BaseImage(:,3);
         Match_Region=cell(size(Cetroids,1),1);
@@ -252,7 +272,7 @@ else
             end
         BaseImage{i,2}=Match_Region{i,1};
         end
-        
+        %}
     end
 end
 end

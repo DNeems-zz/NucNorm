@@ -9,7 +9,6 @@ MChan=data{10}(1).Channel_Master;
 %working on implementation of the master ROI as the histagram input
 
 
-
 IM=Extract_Data(data,2,Channel_Choice,Display_Choice);
 if islogical(IM{1}(1,1))
     GS_Input=get(sHandles.ModImageMenu,'UserData');
@@ -69,24 +68,24 @@ switch Input_Image_Group
             Image=Image(Pull_Index,:);
         end
     case 3
+        
         if MasterROI_Choice==1
-            Image=cell(size(data{9}{data{10}(1).Channel_Master}{2,9},1),3);
-            for i=1:size(data{9}{data{10}(1).Channel_Master}{2,9},1)
-                [Image(i,1:3)]=Extract_Image_Region(data,i+1,IM,iHandles.IMSize(3));
-                mImage=Crop_byIndex(data{9}{MChan}{2,9},[data{9}{MChan}(2,6),data{9}{MChan}(2,7)],i);
-                if get(sHandles.In_MasterOis,'value')
-                    Image{i,1}=Image{i,1}-uint8(~mImage)*255;
-                end
-                Image{i,4}=mImage;
-            end
+            MChoice=2:size(data{9}{MChan}{2,9},1)+1;
         else
-            [Image]=Extract_Image_Region(data,MasterROI_Choice,IM,iHandles.IMSize(3));
-            mImage=Crop_byIndex(data{9}{MChan}{2,9},[data{9}{MChan}(2,6),data{9}{MChan}(2,7)],MasterROI_Choice-1);
-            if get(sHandles.In_MasterOis,'value')
-                Image{1,1}=Image{1,1}-uint8(~mImage)*255;
-            end
-            Image{1,4}=mImage;
+            MChoice=MasterROI_Choice;
         end
+        Image=cell(numel(MChoice),4);
+        for i=1:numel(MChoice)
+          
+            [Image(i,1:3)]=Extract_Image_Region(data,MChoice(i),IM,iHandles.IMSize(3));
+          
+            mImage=Crop_byIndex(data{9}{MChan}{2,9},[data{9}{MChan}(2,6),data{9}{MChan}(2,7)],MChoice(i)-1);
+            if get(sHandles.InMaster,'value')
+                Image{i,1}=Image{i,1}-uint8(~mImage)*255;
+            end
+            Image{i,4}=mImage;
+        end
+        
 end
 
 HistImage=cell(size(Image,1),1);
@@ -101,13 +100,21 @@ for i=1:size(Image,1)
         case 4
             if MasterROI_Choice==1
                 [SS]=Extract_Data(data,[6,7],data{10}(1).Channel_Master,2);
-                HistImage{i,1}=Six_to_Image(SS{1,1}(i,:),SS{1,2}(i,:)-Image{i,3},size(Image{i,1}),'Add');
+                HistImage{i,1}=Six_to_Image(SS{1,1}(i,:),...
+                    SS{1,2}(i,:)-Image{i,3},...
+                    size(Image{i,1}),'Add');
                 HistImage{i,1}=Image{i,1}-uint8(~HistImage{i,1})*255;
             else
                 
                 
                 [SS]=Extract_Data(data,[6,7],data{10}(1).Channel_Master,2);
-                HistImage{i,1}=Six_to_Image(SS{1,1}(MasterROI_Choice-1,:),SS{1,2}(MasterROI_Choice-1,:)-Image{1,3},size(Image{i,1}),'Add');
+                RowPull=data{9}{MChan}{2,9}{MasterROI_Choice-1,2};
+                [rPull_Index]=Find_RowPull(SS{1}(:,3),RowPull);
+                HistImage{i,1}=Six_to_Image(SS{1,1}(rPull_Index,:),...
+                    SS{1,2}(rPull_Index,:)-Image{1,3},...
+                    size(Image{i,1}),...
+                    'Add');
+
                 HistImage{i,1}=Image{i,1}-uint8(~HistImage{i,1})*255;
             end
     end
@@ -125,17 +132,8 @@ W=mROIs{mROI_RowPull,4}(1); H=mROIs{mROI_RowPull,4}(2); D=mROIs{mROI_RowPull,4}(
 Y=mROIs{mROI_RowPull,3}(2);X=mROIs{mROI_RowPull,3}(1); Z=mROIs{mROI_RowPull,3}(3);
 RawImage=Image;
 [RawImage,BB(1),BB(2),BB(3)]=Crop_Image(RawImage{:},X,Y,Z,H,W,D,0);
-StackDepth=size(RawImage,3);
-if ~isa(RawImage,'logical')
-    RawImage=uint8(double(RawImage).*255/double(max(max(max(RawImage)))));
-    BottomPad=repmat(uint8(zeros(size(max(RawImage,[],3)))),[1,1,BB(3)-1]);
-    TopPad=repmat(uint8(zeros(size(max(RawImage,[],3)))),[1,1,Z_Steps-StackDepth]);
-else
-    BottomPad=repmat(false(size(max(RawImage,[],3))),[1,1,BB(3)-1]);
-    TopPad=repmat(false(size(max(RawImage,[],3))),[1,1,Z_Steps-StackDepth]);
-    
-end
 
-Image=[{cat(3,BottomPad,RawImage,TopPad)},mROI_IndexPull,{BB-1}];
+
+Image=[{RawImage},mROI_IndexPull,{BB-1}];
 
 end

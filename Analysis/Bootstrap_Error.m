@@ -1,9 +1,9 @@
 function [Mean,uCI,lCI]=Bootstrap_Error(Dist,Simulation_Points,H)
 
-Simulation_Num=str2double(get(H.AnProp(4).AnaProp(2),'string'));
-    CI=str2double(get(H.AnProp(4).AnaProp(4),'string'));
+Simulation_Num=H.Simulation_Num;
+    CI=H.CI;
     Num_SimPoints=numel(Simulation_Points);   
-if get(H.AnProp(2).AnaProp(6),'value')==1
+if H.Calc_SimError==1;
      Mean=sum(Simulation_Points<=Dist)/Num_SimPoints;
     Error_Compute_pVal=nan(Simulation_Num,1);
     for i=1:Simulation_Num

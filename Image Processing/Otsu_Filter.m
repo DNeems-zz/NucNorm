@@ -5,7 +5,8 @@ for i=1:size(Image,1)
     [levels,Efficacy]=graythresh(HistImage{i,1});
     H=HistImage{i,1};
     H=H(:);
-    lowercutoff=((max(H)-min(H))*levels)+min(H);
+    lowercutoff=255*levels;
+    %lowercutoff=((max(H)-min(H))*levels)+min(H);
     LLimit=lowercutoff;
     if Efficacy<=.5
         display(sprintf('Warning low efficacy score of %1f',Efficacy));

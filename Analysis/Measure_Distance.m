@@ -13,30 +13,24 @@ Obj_Region_Chan=Region_Objs.mROI_Name;
 Start_Pos=[2,5,8];
 allTable=cell(size(Query_PL,1)*size(Ref_PL,1),11);
 summaryTable=cell(size(Ref_PL,1),3);
-if size(Query_PL{1,1},1)==1
-Query_Type='Centroid';
-else
-Query_Type='Perimeter';    
-end
 
-uRows=true(size(Query_PL,1)*size(Ref_PL,1),1);
-if strcmp(Query_Type,H.Pixel_Set)==1
-    Possible_Pairs=sort(allcomb([1:size(Ref_PL,1)],[1:size(Query_PL,1)]),2);
-    uPairs=unique(Possible_Pairs,'rows');
-    for i=1:size(uPairs,1)
-        uRows(find(ismember(Possible_Pairs,uPairs(i,:),'rows'),1,'first'),1)=false;
-    end
-    uRows=~uRows;
-end
 
 z=1;
+
 for p=1:size(Ref_PL,1)
-    Group_Start=z;
     for k=1:size(Query_PL,1)
-        if (strcmp(Ref_ID,Ana_ID) && p==k) ||  uRows(z)==0
+        if (strcmp(Ref_ID,Ana_ID) && p==k)
+            if size(Ref_PL,1) ==1 && size(Query_PL,1)==1
+        allTable{z,1}=sprintf('%s:%s_%d to %s_%d',Obj_Region_Chan,Ref_ID,p,Ana_ID,k);
+        allTable{z,2}=0;
+
+        allTable(z,3:end)=arrayfun(@(x) {x},nan(1,9));
+            end
         else
         allTable{z,1}=sprintf('%s:%s_%d to %s_%d',Obj_Region_Chan,Ref_ID,p,Ana_ID,k);
         All_Dist=pdist2(Query_PL{k,1},Ref_PL{p,1});
+
+
         All_Dist=All_Dist(:);
         absDist(z,1)=H.Comp_Mode(All_Dist);
         allTable{z,2}=absDist(z,1);
@@ -59,10 +53,11 @@ for p=1:size(Ref_PL,1)
             z=z+1;
     
     end
-    Name=sprintf('%s:%s_%d to %s Summary',Obj_Region_Chan,Ref_ID,p,Ana_ID); 
-    [summaryTable{p,1},summaryTable{p,2},summaryTable{p,3}]=toSignal_Summary(allTable(Group_Start:z-1,2:end),Name,11,H);
+    
 
 end
+    Name=sprintf('%s:%s to %s Summary',Obj_Region_Chan,Ref_ID,Ana_ID); 
+    [summaryTable{1,1},summaryTable{1,2},summaryTable{1,3}]=toSignal_Summary(allTable(:,2:end),Name,11,H,'Within');
 
 summaryTable=[{vertcat(summaryTable{:,1})},{vertcat(summaryTable{:,2})},{vertcat(summaryTable{:,3})}];
 allTable=allTable(~cellfun(@isempty,allTable(:,1)),:);

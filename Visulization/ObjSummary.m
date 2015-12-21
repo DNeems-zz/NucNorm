@@ -15,9 +15,10 @@ sdata=zeros(size(Obj_Summary{MChan},1),NumChan);
 mROI_Num=cell2mat(Obj_Summary{MChan}(:,3));
 for i=1:size(Obj_Summary{MChan},1)
     for j=1:NumChan
-            if isempty(data{9}{j})
+            if isempty(Obj_Summary{1,j})
                 sdata(i,j)=nan;
             else
+                
                 sdata(i,j)=numel(Find_RowPull(Obj_Summary{1,j}(:,3),mROI_Num(i,1)));
             end
     end

@@ -19,6 +19,10 @@ Choice.Overlay=CallBack_Value_String(handles.OverlayMenu);
 
 
 %% Update all handles from the various display menus once a setting is changed 
+if varargin{1}==handles.MasterROIMenu
+    handles.cLabelMatrix_Toggle(Choice.Display,Choice.Channel)=false;
+
+end
 
 [Choice]=Change_Chan(data,handles,Choice);
 GrayScale_Image=arrayfun(@(x) isa(x{1,1},'uint8'),Extract_Data(data,2,Choice.Channel,Choice.Display),'uniformoutput',0);
@@ -175,7 +179,11 @@ if Choice.MasterROI==1
     RawImage=RawImage{:};
     RawImage=uint8(double(RawImage).*255/double(max(max(max(RawImage)))));
     Image=Extract_Data(data,2,Choice.Channel,Choice.Display);
+    
     Image=Image{:};
+    if ~isa(Image,'uint8')
+    Image=logical(Image);
+    end
   
     Six=Extract_Data(data,6,Choice.Channel,Choice.Display);
     if isempty(Six{1,1})
@@ -218,18 +226,19 @@ if Choice.MasterROI==1
         end
     end
 else
-    
     mROIs=data{9}{data{10}(1).Channel_Master}{2,9};
     mROI_IndexPull=cell2mat(mROIs(Choice.MasterROI-1,2));
     [mROI_RowPull]=Find_RowPull(mROIs(:,2),mROI_IndexPull);
+   
     W=mROIs{mROI_RowPull,4}(1); H=mROIs{mROI_RowPull,4}(2); D=mROIs{mROI_RowPull,4}(3);
     Y=mROIs{mROI_RowPull,3}(2);X=mROIs{mROI_RowPull,3}(1); Z=mROIs{mROI_RowPull,3}(3);
     RawImage=Extract_Data(data,2,Choice.Channel,1);
     [RawImage,BB(1),BB(2),BB(3)]=Crop_Image(RawImage{:},X,Y,Z,H,W,D,0);
     RawImage=uint8(double(RawImage).*255/double(max(max(max(RawImage)))));
     StackDepth=size(RawImage,3);
+    
     BottomPad=repmat(uint8(zeros(size(max(RawImage,[],3)))),[1,1,BB(3)-1]);
-    TopPad=repmat(uint8(zeros(size(max(RawImage,[],3)))),[1,1,handles.IMSize(3)-StackDepth]);
+    TopPad=repmat(uint8(zeros(size(max(RawImage,[],3)))),[1,1,handles.IMSize(3)-StackDepth-(BB(3)-1)]);
     RawImage=cat(3,BottomPad,RawImage,TopPad);
     Centroids=[];
     
@@ -239,13 +248,13 @@ else
         Five_Six_Seven=Extract_Data(data,[5,6,7],Choice.Channel,Choice.Display);
         Image=zeros(size(RawImage));
  
-        if ~isempty(Five_Six_Seven{1,1});
+        if ~isempty(Five_Six_Seven{1,1})
             Six_RowPull=Find_RowPull(Five_Six_Seven{2}(:,3),mROI_IndexPull);
             Centroids=cell(numel(Six_RowPull),1);
             for i=1:numel(Six_RowPull)
                 tImage=zeros(size(RawImage)*4);
                 Expand_Size=size(tImage);
-                Shift=Five_Six_Seven{3}(Six_RowPull(i),:)-(BB-1);
+                Shift=[Five_Six_Seven{3}(Six_RowPull(i),1:2)-(BB(1:2)-1),Five_Six_Seven{3}(Six_RowPull(i),3)];
                 
                 IM=Five_Six_Seven{2}{Six_RowPull(i),1};
                 imS=size(IM);
@@ -276,7 +285,7 @@ else
                         handles.cLabelMatrix{Choice.Display,Choice.Channel}=Image;
                         handles.cLabelMatrix_Toggle(Choice.Display,Choice.Channel)=true;
                     else
-                    Image=     handles.cLabelMatrix{Choice.Display,Choice.Channel};
+                    Image= handles.cLabelMatrix{Choice.Display,Choice.Channel};
                     end
 
                 else
@@ -353,8 +362,10 @@ for i=1:Chan
 end
 if Disable_mROI
     set(handles.MasterROIMenu,'enable','off')
+
 else
         set(handles.MasterROIMenu,'enable','on')
+    set(handles.MasterROIMenu,'visible','on')
 
 end
 end
@@ -363,10 +374,14 @@ function []=Thresh_Permissions(data,handles,Choice)
 Allow_Modification=false;
 try
     Allow_Modification=data{9}{Choice.Channel}{2,1};
+    if isempty(Allow_Modification)
+        Allow_Modification=false;
+    end
 catch
 end
 sFN=fieldnames(handles.ThrMenu.Seg);
 fFN=fieldnames(handles.ThrMenu.Filt);
+
 if Allow_Modification==0 && Choice.MasterROI>1
    Mode='off'; 
 else

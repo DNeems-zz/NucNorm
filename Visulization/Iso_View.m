@@ -4,10 +4,10 @@ MChan=data{10}(1).Channel_Master;
 
 IsoSurf=Create_InputMask(data,1);
 Control_Iso=BuildGUI(varargin);
-NumChan=numel(data{9});
+NumChan=sum(cellfun('size',data{9},1)==2);
 
 for i=1:NumChan
-    if ~isempty(data{9}{i})
+    if size(data{9}{i},1)==2
     set([Control_Iso.FaceColor(i),Control_Iso.FaceAlpha(i),Control_Iso.EdgeColor(i),Control_Iso.EdgeAlpha(i)],'callback',{@Update_Iso,data,Control_Iso})
     else
     set([Control_Iso.FaceColor(i),Control_Iso.FaceAlpha(i),Control_Iso.EdgeColor(i),Control_Iso.EdgeAlpha(i)],'enable','off')        
@@ -49,7 +49,7 @@ end
 function Comp3D=BuildGUI(varargin)
 
 data=guidata(varargin{1}{1});
-NumChan=numel(data{9});
+NumChan=sum(cellfun('size',data{9},1)==2);
 AllColors={'None','Blue','Green','Red','Yellow','Cyan','Magenta','Black','White'};
 
 Comp3D.fh = figure('units','normalized',...
@@ -139,7 +139,7 @@ end
 function []=Update_Iso(varargin)
 [~,data,Control_Iso] = varargin{[1,3,4]};
 Image_Iso=get(Control_Iso.fh,'userdata');
-NumChan=numel(data{9});
+NumChan=sum(cellfun('size',data{9},1)==2);
 
 for i=1:NumChan
     if ~isempty(data{9}{i})
@@ -156,7 +156,7 @@ end
 end
 
 function Image_Iso=New_Iso(data,IsoSurf,Control_Iso,Image_Iso)
-NumChan=numel(data{9});
+NumChan=sum(cellfun('size',data{9},1)==2);
 
 for i=1:NumChan
     if ~isempty(data{9}{i})
@@ -184,11 +184,12 @@ end
 
 function IsoSurf=Create_InputMask(data,mROI_Choice)
 MChan=data{10}(1).Channel_Master;
-NumChan=numel(data{9});
+NumChan=sum(cellfun('size',data{9},1)==2);
 IsoSurf=cell(NumChan,1);
 
 %Fix this of mROI_Obj after lunch
 Region=mROI_Obj(data,mROI_Choice);
+
 for i=1:NumChan
     BinaryImage=double(zeros(data{9}{MChan}{2,9}{1,4}));
     if ~isempty(data{9}{i})

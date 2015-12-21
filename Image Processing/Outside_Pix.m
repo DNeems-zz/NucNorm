@@ -11,7 +11,7 @@ Del_ROI=false(size(Filtered_ROIs{1,1},1),1);
 for i=1:size(Filtered_ROIs{1,1},1)
     Match=false(size(mROIs,1),1);
     for j=1:size(PL,1)
-        Match(j,i)=mean(pdist2(PL{j,1}(knnsearch(PL{j,1},Centroids{i},'k',9),:),Centroids{i}),1)<=1;
+        Match(j,i)=mean(pdist2(PL{j,1}(knnsearch(Centroids{i},PL{j,1},9),:),Centroids{i}),1)<=1;
     end
     if sum(Match)==0
     Del_ROI(i,1)=true;

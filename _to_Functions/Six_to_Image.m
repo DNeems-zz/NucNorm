@@ -41,6 +41,7 @@ switch Choice
             end
             PL{i,1}=tROI.PixelList+repmat(Seven(i,:),size(tROI.PixelList,1),1);
         end
+        
         PL=vertcat(PL{:});
         for i=1:size(PL,1)
             Image(PL(i,2),PL(i,1),PL(i,3))=1;

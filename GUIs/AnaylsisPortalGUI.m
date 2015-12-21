@@ -1,7 +1,7 @@
 function H=AnaylsisPortalGUI(varargin)
 [h,Modality,Type]=varargin{[1,3,4]};
 data=guidata(h);
-NumChan=numel(data{9});
+NumChan=sum(~cellfun(@isempty,data{9}));
 MChan=data{10}(1).Channel_Master;
 H=Contruct_GUIBase(data);
 
@@ -25,40 +25,59 @@ set(H.CProps.MenuAddParm(i),'visible','on')
 set(H.CProps.TextAddParm(i),'visible','on')
 set(H.GS.Cluster_Num(i),'visible','on')
 set(H.GS.Cluster_Title(i),'visible','on')
+set(H.GS.Cluster_Under(i),'visible','on')
+set(H.GS.Cluster_Over(i),'visible','on')
+
 end
 
 
 switch Modality
     case 'Geo'
+        for i=2:numel(H.CProps.TextAddParm)-1
+            set(H.CProps.TextAddParm(i),'string',sprintf('Analysis %d',i-1))
+            set(H.GS.Cluster_Title(i),'string',sprintf('Ana: %d',i-1))
+            
+            set(H.CProps.MenuAddParm(i),'callback',[])
+        end
+        set(H.CProps.Apply,'enable','on')
+        set(H.fh,'Name','Between/Among')
+        T=[{'Minimum'},{'Maximum'},{'Mean'}];
+        Tags=[{'min'},{'max'},{'mean'}];
+        
+        for i=1:3
+            set(H.GS.Within(i),'visible','on','string',T{i},'userdata',str2func(Tags{i}))
+            set(H.GS.Among(i),'visible','on','string',T{i},'userdata',str2func(Tags{i}))
+            
+        end
+        
         switch Type
             case 1
-                
                 set(H.AnaMethod(1),'visible','on','string','Min Distance: Perimeter')
                 set(H.AnaMethod(2),'visible','on','string','Min Distance: Centroid')
-                set(H.AnaMethod(3),'visible','on','string','Mean Distance: Perimeter')
-                set(H.AnaMethod(4),'visible','on','string','Mean Distance: Centroid')
-                set(H.AnaMethod(5),'visible','on','string','Max Distance: Perimeter')
-                set(H.AnaMethod(6),'visible','on','string','Max Distance: Centroid')
+                set(H.AnaMethod(3),'visible','on','string','Min Distance: Total')
+                set(H.AnaMethod(4),'visible','on','string','Mean Distance: Perimeter')
+                set(H.AnaMethod(5),'visible','on','string','Mean Distance: Centroid')
+                set(H.AnaMethod(6),'visible','on','string','Max Distance: Perimeter')
+                set(H.AnaMethod(7),'visible','on','string','Max Distance: Centroid')
                 set(H.CProps.TextAddParm(1),'string','Referance')
                 set(H.GS.Cluster_Title(1),'string','Ref:')
                 set(H.CProps.MenuAddParm(1),'callback',[])
-                for i=2:numel(H.CProps.TextAddParm)-1
-                    set(H.CProps.TextAddParm(i),'string',sprintf('Analysis %d',i-1))
-                    set(H.GS.Cluster_Title(i),'string',sprintf('Ana: %d',i-1))
+                set(H.CProps.Pairwise,'visible','on')
+                
+                      set(H.CProps.Apply,'callback',{@InterObj_Meassure,Region_Objs,H});
+            case 2
+                    set(H.AnaMethod(1),'visible','on','string','Number Voxels')
+                set(H.AnaMethod(2),'visible','on','string','Voxel Volume')
+                set(H.AnaMethod(3),'visible','on','string','Convex Hull Volume')
+                set(H.AnaMethod(4),'visible','on','string','Surface Area')
+                set(H.AnaMethod(5),'visible','on','string','Surface Area / Voxel Vol')
+                set(H.AnaMethod(6),'visible','on','string','Surface Area / Convex Vol')
 
-                    set(H.CProps.MenuAddParm(i),'callback',[])
-                end
-                set(H.CProps.Apply,'enable','on')
-                set(H.fh,'Name','Between/Among')
-                T=[{'Minimum'},{'Maximum'},{'Mean'}];
-                Tags=[{'min'},{'max'},{'mean'}];
+                set(H.AnaPropBG(2:4),'visible','off')
 
-                for i=1:3
-                    set(H.GS.Within(i),'visible','on','string',T{i},'userdata',str2func(Tags{i}))
-                    set(H.GS.Among(i),'visible','on','string',T{i},'userdata',str2func(Tags{i}))
+                set(H.CProps.Apply,'callback',{@Geometric_Meassure,Region_Objs,H});
 
-                end
-                set(H.CProps.Apply,'callback',{@InterObj_Meassure,Region_Objs,H});
+         
             case 4
                 
                 set(H.AnaMethod(1),'visible','on','string','Eroding Shells')
@@ -70,10 +89,9 @@ switch Modality
                     'units','normalized','pos',[.3 .8571-((4-1)*.1429) .45 .1],'parent',H.AnaylsisMethods,...
                     'fontsize',10,'visible','on');
                 set(H.CProps.TextAddParm(1),'string','Shell Chan')
-                for i=2:numel(H.CProps.TextAddParm)
-                    set(H.CProps.TextAddParm(i),'string',sprintf('Analysis %d',i-1))
-                end
+                
                 set(H.fh,'Name','Shells')
+                set(H.AnProp(2).AnaProp(1:5),'visible','off')
                 set(H.CProps.Apply,'callback',{@Shell_Meassure,Region_Objs,H,Type});
                 set(H.AnaPropBG(2),'visible','on')
 
@@ -128,6 +146,9 @@ BaseGUI.CProps.MenuAddParm(z)=uicontrol('Style','popupmenu','String',['All',arra
 BaseGUI.CProps.TextAddParm(z) = uicontrol('Style','text','String','Index',...
     'units','normalized','pos',[.001 .2 .32 .1],'parent',BaseGUI.ChannelProps,...
     'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',12,'tag','Index:');
+BaseGUI.CProps.Pairwise  = uicontrol('Style','checkbox','String','All Pairwise',...
+'units','normalized','pos',[.35 .1 .65 .1],'parent',BaseGUI.ChannelProps,...
+'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
 BaseGUI.CProps.Apply  = uicontrol('Style','pushbutton','String','Calculate',...
 'units','normalized','pos',[.35 0 .3 .1],'parent',BaseGUI.ChannelProps,...
 'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',12,'callback',@Analyze,'Enable','off');
@@ -152,35 +173,26 @@ end
 %% Force Signal Groups
 BaseGUI.SignalsGroups=uibuttongroup('unit','normalized',...
     'position',[.025 .45 .45 .15],...
-'title','Signals Grouping',...
-'fontsize',12,...
-'fontweight','bold',...
-'backgroundcolor',get(BaseGUI.fh,'color'),'parent',BaseGUI.fh,'visible','on','HandleVisibility','on');
-BaseGUI.GS.Cluster_Title(1)  = uicontrol('Style','text','String','Ana 1:',...
-'units','normalized','pos',[.025 .525 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
-BaseGUI.GS.Cluster_Num(1)  = uicontrol('Style','edit','String',nan,...
-'units','normalized','pos',[.22 .55 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',[1 1 1],'fontsize',10,'visible','off');
-BaseGUI.GS.Cluster_Title(2)  = uicontrol('Style','text','String','Ana 2:',...
-'units','normalized','pos',[.525 .525 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
-BaseGUI.GS.Cluster_Num(2)  = uicontrol('Style','edit','String',nan,...
-'units','normalized','pos',[.72 .55 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',[1 1 1],'fontsize',10,'visible','off');
+    'title','Signals Grouping',...
+    'fontsize',12,...
+    'fontweight','bold',...
+    'backgroundcolor',get(BaseGUI.fh,'color'),'parent',BaseGUI.fh,'visible','on','HandleVisibility','on');
 
-BaseGUI.GS.Cluster_Title(3)  = uicontrol('Style','text','String','Ana 3:',...
-'units','normalized','pos',[.025 .025 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
-BaseGUI.GS.Cluster_Num(3)  = uicontrol('Style','edit','String',nan,...
-'units','normalized','pos',[.22 .05 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',[1 1 1],'fontsize',10,'visible','off');
-BaseGUI.GS.Cluster_Title(4)  = uicontrol('Style','text','String','Ana 4:',...
-'units','normalized','pos',[.525 .025 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
-BaseGUI.GS.Cluster_Num(4)  = uicontrol('Style','edit','String',nan,...
-'units','normalized','pos',[.72 .05 .2250 .275],'parent',BaseGUI.SignalsGroups,...
-'backgroundcolor',[1 1 1],'fontsize',10,'visible','off');
+for i=1:4
+BaseGUI.GS.Cluster_Title(i)  = uicontrol('Style','text','String',sprintf('Ana: %d',i),...
+    'units','normalized','pos',[.05 .9-(.225*(i)) .15 .225],'parent',BaseGUI.SignalsGroups,...
+    'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
+BaseGUI.GS.Cluster_Num(i)  = uicontrol('Style','edit','String',nan,...
+    'units','normalized','pos',[.3 .9-(.225*(i)) .15 .225],'parent',BaseGUI.SignalsGroups,...
+    'backgroundcolor',[1 1 1],'fontsize',10,'visible','off');
+BaseGUI.GS.Cluster_Under(i)  = uicontrol('Style','checkbox','String','Up',...
+    'units','normalized','pos',[.45 .9-(.225*(i)) .25 .225],'parent',BaseGUI.SignalsGroups,...
+    'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off','value',1);
+BaseGUI.GS.Cluster_Over(i)  = uicontrol('Style','checkbox','String','Down',...
+    'units','normalized','pos',[.7 .9-(.225*(i)) .3 .225],'parent',BaseGUI.SignalsGroups,...
+    'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off','value',1);
+
+end
 %% Anaylsis Properties
 BaseGUI.AnaylsisProps=uibuttongroup('unit','normalized',...
 'position',[.525 .55 .45 .45],...
@@ -287,14 +299,18 @@ BaseGUI.GProps(1)=uibuttongroup('unit','normalized',...
 'fontweight','bold',...
 'backgroundcolor',get(BaseGUI.fh,'color'),'parent',BaseGUI.GroupProps,'visible','on','HandleVisibility','on');
 
-for i=1:4
+for i=1:3
 BaseGUI.GS.Within(i) = uicontrol('Style','checkbox','String','Summary',...
 'units','normalized','pos',[.025 .8-((i-1)*.2) .475 .15],'parent',BaseGUI.GProps(1),...
 'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
-BaseGUI.GS.Within(4+i) = uicontrol('Style','checkbox','String','Summary',...
+BaseGUI.GS.Within(3+i) = uicontrol('Style','checkbox','String','Summary',...
 'units','normalized','pos',[.5 .8-((i-1)*.2) .475 .15],'parent',BaseGUI.GProps(1),...
 'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','off');
 end
+BaseGUI.GS.Within_Global = uicontrol('Style','checkbox','String','Use Global',...
+'units','normalized','pos',[.25 .01 .5 .15],'parent',BaseGUI.GProps(1),...
+'backgroundcolor',get(BaseGUI.fh,'color'),'fontsize',10,'visible','on');
+
 BaseGUI.GProps(2)=uibuttongroup('unit','normalized',...
 'position',[.025 .025 .95 .475],...
 'title','Among Channel Summary',...
@@ -346,7 +362,7 @@ BaseGUI.SavePath=uicontrol('style','pushbutton',...
     'backgroundcolor',get(BaseGUI.fh,'color'),...
     'HorizontalAlignment','left','callback',{@setSavePath,BaseGUI});
 
-
+set(BaseGUI.CProps.Pairwise,'callback',{@Pairwise,BaseGUI})
 end
 function []=EnableApply(varargin)
 H=get(varargin{1},'userdata');
@@ -372,4 +388,22 @@ end
 function []=setSavePath(varargin)
 Path=uigetdir;
 set(varargin{3}.SavePathString,'string',Path);
+end
+
+function []=Pairwise(varargin)
+H=varargin{3};
+
+switch get(varargin{1},'value')
+    case 0
+Set='on';        
+S=get(H.CProps.MenuAddParm(2),'string');
+        set(H.CProps.MenuAddParm(1),'enable',Set,'value',1,'string',S(2:end))
+    case 1
+Set='off';
+        set(H.CProps.MenuAddParm(1),'enable',Set,'value',1,'string','None')
+
+end
+        set(H.GS.Cluster_Num(1),'enable',Set)
+        set(H.GS.Cluster_Title(1),'enable',Set)
+        set(H.CProps.TextAddParm(1),'enable',Set)
 end

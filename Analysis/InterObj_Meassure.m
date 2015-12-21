@@ -1,129 +1,87 @@
 function H=InterObj_Meassure(varargin)
 
-[Region_Objs,H]=varargin{[3,4]};
+if numel(varargin)==2
+[Region_Objs,H]=Region_PreProcesses(varargin{[1,2]});
+else
+[H]=Analysis_setParameters(varargin{4},1:6);
+[Region_Objs,H]=Region_PreProcesses(varargin{3},H);
+close(H.fh)
 
-%Extract Region to Anaylzie from List
-if ~strcmp(CallBack_Value_String(H.CProps.MenuAddParm(end)),'All')
-Region_Objs=Region_Objs(str2double(CallBack_Value_String(H.CProps.MenuAddParm(end))),:);
-end
-%Make 2D if nessicary
-if get(H.AnProp(1).AnaProp(1),'value')==1
-    for i=1:size(Region_Objs,1)
-        Region_Objs{i,1}=Region_Objs{i,1}.Make_2D;
-    end
-end
-
-Ana_Channels=arrayfun(@(x) get(x,'value'),H.CProps.MenuAddParm(2:end-1));
-Ana_Channels=Ana_Channels(Ana_Channels~=1)-1;
-Ref_Channel=get(H.CProps.MenuAddParm(1),'value');
-   Input_Channels=numel(Ref_Channel)+numel(Ana_Channels);
-H.Ref_Channel=Ref_Channel;
-H.Ana_Channels=Ana_Channels;
-All_Channels=[Ref_Channel,Ana_Channels];
-for i=1:size(Region_Objs,1)
-    rmChan=Region_Objs{i,1}.Channel_Num(~ismember(Region_Objs{i,1}.Channel_Num,[Ref_Channel,Ana_Channels]));
-    for j=1:numel(rmChan)
-        Region_Objs{i,1}=Region_Objs{i,1}.rmChan(rmChan(j));
-    end
-    
-    for j=1:Input_Channels
-        if ~isnan(str2double(get(H.GS.Cluster_Num(j),'string'))) && cellfun('size',Region_Objs{i,1}.Binary(1,j),1) >= str2double(get(H.GS.Cluster_Num(j),'string'))
-        Region_Objs{i,1}=Region_Objs{i,1}.Group_Signals(All_Channels(j),str2double(get(H.GS.Cluster_Num(j),'string')));
-        end
-    end
-    
 end
 
 DS_Return=cell(3,6);
-Pixel_Set=[{'Perimeter'},{'Centroid'},{'Perimeter'},{'Centroid'},{'Perimeter'},{'Centroid'}];
-Comp_Mode=[{'min'},{'min'},{'mean'},{'mean'},{'max'},{'max'}];
-Save_Dir=get(H.SavePathString,'string');
-for i=1:6
-    if get(H.AnaMethod(i),'value')==1
-            FuncName=str2func('Measure_Distance');
-            
-            H.Pixel_Set=Pixel_Set{i};
-            H.FuncName=FuncName;
-            H.Comp_Mode=str2func(Comp_Mode{i});
-            if get(H.AnProp(2).AnaProp(4),'value')==1
-            H.NormType=2;
-            else
-            H.NormType=1;
-            end
-            DS_Return{1,i}=Feeder(Region_Objs,H);        
-    DS_Return{2,i}=get(H.AnaMethod(i),'string');
-    DS_Return{3,i}=Comp_Mode{i};
-    Result_toCSV(DS_Return(:,1),Save_Dir);
-    end
-    
+Pixel_Set=[{'Perimeter'},{'Centroid'},{'Whole'},{'Perimeter'},{'Centroid'},{'Perimeter'},{'Centroid'}];
+Comp_Mode=[{'min'},{'min'},{'min'},{'mean'},{'mean'},{'max'},{'max'}];
 
-end
-display('done')
-close(H.fh)
+Save_Dir=H.SaveDir;
 
-
-end
-
-function [DS_Return]=Feeder(Region_Objs,H)
-Distrobution_Distance=measure_SimDist(Region_Objs,H);
-
-Generic_Header=[{' '},{'Abs Distance'},...
+FuncName=str2func('Measure_Distance');
+H.Generic_Header=[{' '},{'Abs Distance'},...
     {'NN_pVal'},{'NN_pVal_uCI'},{'NN_pVal_lCI'},...
     {'W_pVal'},{'W_pVal_uCI'},{'W_pVal_lCI'},...
     {'cHull_pVal'},{'cHull_pVal_uCI'},{'cHull_pVal_lCI'}];
-c_allTable=cell(size(Region_Objs,1),numel(H.Ana_Channels));
-c_summaryTable=cell(size(Region_Objs,1),numel(H.Ana_Channels));
-
-t_allTable=cell(size(Region_Objs,1),numel(H.Ana_Channels));
-t_summaryTable=cell(size(Region_Objs,1),numel(H.Ana_Channels));
 
 
-for R=1:size(Region_Objs,1)
-    display(sprintf('Meassuring ROI %d/%d',R,size(Region_Objs,1)));
-    for i=1:numel(H.Ana_Channels)
-        display(sprintf('Channel %d/%d',i,numel(H.Ana_Channels)));
-        Ana_ID=Region_Objs{R,1}.Channel_Name(Region_Objs{R,1}.Channel_Num==H.Ana_Channels(i));
-        Ref_ID=Region_Objs{R,1}.Channel_Name(Region_Objs{R,1}.Channel_Num==H.Ref_Channel);
-        Ref_Set=Region_Objs{R,1}.getPixel_List(H.Ref_Channel,H.Pixel_Set,'Microns');
-        if get(H.AnProp(3).AnaProp(1),'value')==1 %Calculate for Centroid
-            Cents=Region_Objs{R,1}.getPixel_List(H.Ana_Channels(i),'Centroid','Microns');
-            [c_allTable{R,i},c_summaryTable{R,i}]=H.FuncName([{Cents},Ana_ID],[{Ref_Set},Ref_ID],Region_Objs{R,1},Distrobution_Distance(R,:),H);
+for Ana_Type=1:numel(H.Use_Method)
+    if H.Use_Method(Ana_Type)==1
+        for R=1:size(Region_Objs,1)
+            H.Pixel_Set=Pixel_Set{Ana_Type};
+            H.FuncName=FuncName;
+            H.Comp_Mode=str2func(Comp_Mode{Ana_Type});
+            for j=1:numel(H.Ref_Channel)
+                H.Ref_ID{R,j}=Region_Objs{R,1}.Channel_Name(Region_Objs{R,1}.Channel_Num==H.Ref_Channel(j));
+                H.Ref_Set{R,j}=Region_Objs{R,1}.getPixel_List(H.Ref_Channel(j),H.Pixel_Set,'Microns');
+                %Removes _ in names as they have a special meaning later in
+                % data manipulation and name creation
+                if ~cellfun(@isempty,strfind(H.Ref_ID{R,j},'_'))
+                    H.Ref_ID{R,j}{1}(cell2mat(strfind(H.Ref_ID{R,j},'_')))=[];
+                end
+            end
+            for i=1:numel(H.Ana_Channels)
+                H.Ana_ID{R,i}=Region_Objs{R,1}.Channel_Name(Region_Objs{R,1}.Channel_Num==H.Ana_Channels(i));
+                %Removes _ in names as they have a special meaning later in
+                % data manipulation and name creation
+              
+                if ~cellfun(@isempty,strfind(H.Ana_ID{R,i},'_'))
+                    H.Ana_ID{R,i}{1}(cell2mat(strfind(H.Ana_ID{R,i},'_')))=[];
+                end
+            end
         end
-keyboard
-        if get(H.AnProp(3).AnaProp(2),'value') %Calculate for Total
-            Totals=Region_Objs{R,1}.getPixel_List(H.Ana_Channels(i),'Whole','Microns');
-         [t_allTable{R,i},t_summaryTable{R,i}]=H.FuncName([{Totals},Ana_ID],[{Ref_Set},Ref_ID],Region_Objs{R,1},Distrobution_Distance(R,:),H);
-        end
+        Norm_Vals=measure_SimDist(Region_Objs,H);
         
-    
+        DS_Return{1,Ana_Type}=Analyzie(Region_Objs,H,Norm_Vals);
+        DS_Return{2,Ana_Type}=H.Method_Names{Ana_Type};
+        DS_Return{3,Ana_Type}=Comp_Mode{Ana_Type};
+        
+        Result_toCSV(DS_Return(:,Ana_Type),Save_Dir);
+        
     end
 end
 
-c_Data=toSingle_Table(c_allTable,c_summaryTable,Generic_Header,{[{'Centroid'},{[{'Centroid-Signal Min'},{'Centroid-Signal Max'},{'Centroid-Signal Mean'}]}]});
 
-t_Data=toSingle_Table(t_allTable,t_summaryTable,Generic_Header,{[{'Total'},{[{'Total-Signal Min'},{'Total-Signal Max'},{'Total-Signal Mean'}]}]});
-DS_Return=[[c_Data{:}],[t_Data{:}]];
-DS_Return=DS_Return(arrayfun(@(x) isa(x{1},'dataset'),DS_Return));
+display('done')
+
+
 end
 
-function Distrobution_Distance=measure_SimDist(Region_Objs,H)
+function Norm_Vals=measure_SimDist(Region_Objs,H)
 Names=[{'NN_Sim'}, {'W_Sim'},{'cHull_Sim'}];
-Distrobution_Distance=cell(size(Region_Objs,1),3);
+Norm_Vals=cell(size(Region_Objs,1),3);
 
-if sum(cell2mat(get(H.AnProp(2).AnaProp(1:3),'value')))~=0
+if sum(H.Sim_Usage)~=0
     switch H.NormType
         case 1
             for R=1:size(Region_Objs,1)
                 display(sprintf('Calculating Normlized Distances from ROI %d/%d',R,size(Region_Objs,1)));
                 for i=1:3;
-                    if get(H.AnProp(2).AnaProp(i),'value')==1
+                    if H.Sim_Usage(i)==1
                         Ref_Set=Region_Objs{R,1}.getPixel_List(Region_Objs{R,1}.Channel_Num(ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel)),H.Pixel_Set,'Microns');
                         Sim_Points=Region_Objs{R,1}.(Names{i}){1,1};
                         for k=1:size(Ref_Set,1)
                             for j=1:size(Sim_Points,1)
                                 All_Dist=pdist2(Sim_Points(j,:),Ref_Set{k,1});
                                 All_Dist=All_Dist(:);
-                                Distrobution_Distance{R,i}{k,1}(j,1)=H.Comp_Mode(All_Dist);
+                                Norm_Vals{R,i}{k,1}(j,1)=H.Comp_Mode(All_Dist);
                             end
                         end
                     end
@@ -132,15 +90,20 @@ if sum(cell2mat(get(H.AnProp(2).AnaProp(1:3),'value')))~=0
         case 2
             for R=1:size(Region_Objs,1)
                 display(sprintf('Calculating Normlized Distances from ROI %d/%d',R,size(Region_Objs,1)));
-                Num_Ref_Objs=size(Region_Objs{R,1}.Binary{Region_Objs{R,1}.Channel_Num(ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel))},1);
+                Num_Ref_Objs=0;
+                for i=1:numel(H.Ref_Channel)
+                    if size(Region_Objs{R,1}.Binary{ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel(i))},1)>Num_Ref_Objs
+                        Num_Ref_Objs=size(Region_Objs{R,1}.Binary{ismember(Region_Objs{R,1}.Channel_Num,H.Ref_Channel(i))},1);
+                    end
+                end
                 for i=1:3;
-                    if get(H.AnProp(2).AnaProp(i),'value')==1
+                    if H.Sim_Usage(i)==1
                         Sim_Points=Region_Objs{R,1}.(Names{i}){1,1};
                             All_Dist=pdist2(Sim_Points,Sim_Points);
                             All_Dist=All_Dist(:);
-                            Distrobution_Distance{R,i}=All_Dist(randsample(1:size(Sim_Points,1),size(Sim_Points,1),0));
+                            Norm_Vals{R,i}=All_Dist(randsample(1:size(Sim_Points,1),size(Sim_Points,1),0));
                             
-                         Distrobution_Distance{R,i}=repmat( Distrobution_Distance(R,i),Num_Ref_Objs,1);
+                         Norm_Vals{R,i}=repmat( Norm_Vals(R,i),Num_Ref_Objs,1);
                     end
                 end
             end

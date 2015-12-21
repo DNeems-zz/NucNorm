@@ -1,4 +1,5 @@
 function [Index]=ID_Click_Obj(Mod_ROIs,Axises_H,Shift)
+
 coordinates = get(Axises_H,'CurrentPoint');
 coordinates = coordinates(1,1:2);
 aproxCoor=round(coordinates);

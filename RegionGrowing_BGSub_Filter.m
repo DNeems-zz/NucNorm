@@ -11,6 +11,7 @@ for i=1:size(Image,1)
     display(sprintf('Finding Regions: ROI %d/%d',i,size(Image,1)));
     Temp_IM=Image{i,1};
     Temp_Mask=Image{i,4};
+
     Sub_Image=Temp_IM-(uint8(~Temp_Mask)*255);
     NucSize=sum(sum(sum(Temp_Mask~=0)));
     %Intenseity Mode and location of the mode pixels
@@ -44,10 +45,13 @@ for i=1:size(Image,1)
         TI(TI<CheckNum)=0;
         CompImage_M(:,:,p)=logical(TI);
     end
-        Binary_Image=BasicImage_Filter(CompImage_M,sHandles);
-    ROI{i,1}=regionprops(Binary_Image,'pixellist','boundingbox','Area','Image','Centroid');
+    
+    Binary_Image=BasicImage_Filter(CompImage_M,sHandles);
+    
+        ROI{i,1}=regionprops(Binary_Image,'pixellist','boundingbox','Area','Image','Centroid');
     for k=1:numel(ROI{i,1})
         ROI{i,1}(k).RegionNum=Image{i,2};
     end
 end
+
 end

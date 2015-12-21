@@ -1,8 +1,9 @@
 function [] = Multi_StackSlider(varargin)
 data=guidata(varargin{1});
 S.MChan=data{10}(1).Channel_Master;
-S.data=data{9};
-S.metadata=data{10};
+
+S.data=data{9}(cellfun('size',data{9},1)==2);
+S.metadata=data{10}(cellfun('size',data{9},1)==2);
 
 S.ROI=1;
 S.IntensityMod=[1,1,1,1];
@@ -227,14 +228,22 @@ end
 
 imPlane=get(S.sl1,'value');
 mROI=get(S.sl2,'value');
-S=setROI(S,mROI,imPlane);
+S=setROI(S,mROI,floor(imPlane));
 
 for i=1:numel(S.I)
     axes(S.ax(i))
+    set(S.ax(i),'Xlim',[0 size(S.I{i},2)])
+    set(S.ax(i),'Ylim',[0 size(S.I{i},1)])
+   
     imshow(S.I{i})
+end
+for i=numel(S.I)+1:4
+    axes(S.ax(i))
+set(S.ax(i),'visible','off')
 end
 
 View_Composite(1,1,S,varargin{4},2)
+
 guidata(S.fh,S)
 
 end
@@ -248,10 +257,11 @@ S.CornerX=S.data{S.MChan}{2,9}{ROI,3}(2)+1;
 S.CornerY=S.data{S.MChan}{2,9}{ROI,3}(1)+1;
 S.Height=S.data{S.MChan}{2,9}{ROI,4}(2)-1;
 S.Width=S.data{S.MChan}{2,9}{ROI,4}(1)-1;
+
 for i=1:numel(S.data)
     if i==S.MChan
         Region_Obj=mROI_Obj([cell(1,8),{S.data},S.metadata],S.ROI);
-        Final_Perm=Region_Obj.getmROI_Image(i,'Perimeter');
+        Final_Perm=Region_Obj.getmROI_Image(i,'Perimeter',[],'Pad');
         Final_Perm=cat(3,Final_Perm,bwperim(max(Final_Perm,[],3)));
         S.Perim=Final_Perm;
     end
@@ -259,9 +269,12 @@ end
 
 for i=1:numel(S.data)
 Region_Obj=mROI_Obj([cell(1,8),{S.data},S.metadata],S.ROI);
-    S.I{i}=Region_Obj.getmROI_Image(i,'Intensity')*S.IntensityMod(i);
+    
+S.I{i}=Region_Obj.getmROI_Image(i,'Intensity',[],'Pad')*S.IntensityMod(i);
+
     S.I{i}(:,:,size(S.I{i},3)+1)=max(S.I{i},[],3);
-    S.Ib{i}=Region_Obj.getmROI_Image(i,'Binary');
+    
+    S.Ib{i}=Region_Obj.getmROI_Image(i,'Binary',[],'Pad');
     S.Ib{i}(:,:,size(S.Ib{i},3)+1)=max(S.Ib{i},[],3);
     S.staticI{i}=S.I{i};
     S.Ib{i}=(squeeze(S.Ib{i}(:,:,imPlane)));

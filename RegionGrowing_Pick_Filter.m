@@ -5,6 +5,7 @@ Ratio=str2double(get(sHandles.IntDif,'string'));
 if (Ratio<0) || (Ratio>1)
     error('Max Percent Change: Inclusion must be between 0-1')
 end
+
 Seeds=cell(size(Image,1),1);
 for i=1:size(Image,1)
     display(sprintf('Picking Regions: ROI %d/%d',i,size(Image,1)));
@@ -32,6 +33,7 @@ for i=1:size(Image,1)
     end
     Seeds{i,1}=[X,Y,Z];
 end
+
 for i=1:size(Image,1)
        display(sprintf('Finding Regions: ROI %d/%d',i,size(Image,1)));
   Temp_IM=Image{i,1};

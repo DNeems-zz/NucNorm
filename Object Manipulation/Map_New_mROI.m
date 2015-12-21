@@ -5,7 +5,7 @@ MChan=data{10}(1).Channel_Master;
 for i=1:NumChan
     if i==MChan || isempty(data{9}{i})
     else
-        PolyGons=data{9}{data{10}(1).Channel_Master}{2,9}(:,1);
+        PolyGons=data{9}{MChan}{2,9}(:,1);
         New_ROIs=data{9}{i}{2,6};
         for j=1:size(New_ROIs,1)
             Match=false(size(PolyGons,1),1);

@@ -21,7 +21,8 @@ end
 
 
 function []=SingleROI_Image(Input_H,data,mROI_Choice,Image_Window)
-NumChan=numel(data{9});
+NumChan=sum(cellfun('size',data{9},1)==2);
+
 MChan=data{10}(1).Channel_Master;
 Slice=get(Input_H.SliceMenu,'value')-1;
 RawImage=uint8(zeros(data{9}{MChan}{2,9}{mROI_Choice,4}(1:2)+1));
@@ -86,6 +87,20 @@ end
 for i=1:3
     RawImage(:,:,i)=RawImage(:,:,i)+BinaryImage(:,:,i);
 end
+ScaleBar=uint8(false(size(RawImage(:,:,1))));
+[H,W]=size(ScaleBar);
+Length=5/Region_Obj.Calibration(1);
+wEnd=round(W-(W*.05));
+wStart=round(wEnd-Length);
+hStart=round(H-H*.05);
+hEnd=round(hStart+2);
+for i=wStart:wEnd
+    for j=hStart:hEnd
+    ScaleBar(j,i)=255;
+    end
+end
+RawImage=RawImage+repmat(ScaleBar,[1,1,3]);
+
 
 imshow(RawImage,'parent',Image_Window.Parent_Ax)
 set(Image_Window.Image_Window,'visible','on')

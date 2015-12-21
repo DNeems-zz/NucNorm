@@ -3,7 +3,7 @@ handles=data{1};
 Current_Chan=get(handles.ChannelMenu,'value');
 Current_mROI=get(handles.MasterROIMenu,'value');
 Current_Display=get(handles.DisplayModeMenu,'value');
-
+MChan=data{10}(1).Channel_Master;
 
 switch source
     case 'New'        
@@ -29,9 +29,26 @@ switch source
 end
 
 %Adds new data back in
+
 if ~isempty(Mod_ROIs{1,1})
-[Mod_ROIs,delta_ROIs]=ROI_Filter(Mod_ROIs,delta_ROIs,.9,3,data);
+Total_Pix=arrayfun(@(x) sum(sum(sum(x{1}))),Mod_ROIs{2}(:,1));
+%Exclusion size is anythin smaller than .01% of the volume of the largest
+%object
+    [Mod_ROIs,delta_ROIs]=ROI_Filter(Mod_ROIs,delta_ROIs,.9,max(Total_Pix)*.0001,data);
 end
+
+
+if Current_mROI~=1 && Current_Display==2
+    [All_Mod_ROIs]=Extract_Data(data,[5,6,7],Current_Chan,2);
+    
+    [Pull_Index]=Find_RowPull(All_Mod_ROIs{2}(:,3),data{9}{MChan}{2,9}{Current_mROI-1,2});
+    All_Pos=1:size(All_Mod_ROIs{2},1)';
+    for i=1:3
+        All_Mod_ROIs{i}=All_Mod_ROIs{i}(~ismember(All_Pos,Pull_Index),:);
+    end
+    Mod_ROIs=arrayfun(@(x,y) vertcat(x{1},y{1}),Mod_ROIs,All_Mod_ROIs,'uniformoutput',0);
+end
+
 
 [data]=Add_Data(data,[5,6,7],...
     Mod_ROIs,...
@@ -53,6 +70,7 @@ for i=1:size(delta_ROIs,1)
         Image=logical(Image-rmImage);
     elseif delta_ROIs{i,2}==2
         addImage=Six_to_Image(delta_ROIs{i,1}{1,2},delta_ROIs{i,1}{1,3},handles.IMSize,'Add');
+
         Image=logical(Image+addImage);
     end
 end
@@ -92,7 +110,13 @@ end
 
 function [Mod_ROIs,delta_ROIs]=ROI_Filter(Mod_ROIs,delta_ROIs,Prcnt_Overlap,Excl_Size,data)
 
-[Mod_ROIs,Red_Row]=Redundant_Check(Mod_ROIs,Prcnt_Overlap,data);
+delta_ROIs(sum(cellfun(@isempty,delta_ROIs),2)>0,:)=[];
+
+if get(data{1}.MasterROIMenu,'value')==1
+    [Mod_ROIs,Red_Row]=Redundant_Check(Mod_ROIs,Prcnt_Overlap,data);
+else
+    Red_Row=[{cell(1,2)},{cell(1,4)},zeros(1,3)];
+end
 Mod_Del=false(size(Mod_ROIs{2},1),1);
 for i=1:size(Mod_ROIs{2},1)
     if sum(sum(sum(Mod_ROIs{2}{i,1})))<=Excl_Size
@@ -107,18 +131,17 @@ for i=1:3
 end
 Red_FS=vertcat(Red_FS,Red_Row{3});
 Red_Cent=vertcat(Red_Cent,vertcat(Red_Row{2}{:,4}));
-
-if ~(isempty(delta_ROIs{1,1}))
-
-    rm_delta_ROIs=false(size(delta_ROIs,1),1);
-for i=1:size(delta_ROIs,1)
-    for j=1:size(Red_FS,1)
-        if ismember(Red_FS(j,:),delta_ROIs{i,1}{1,3},'rows')==1  && ismember(Red_Cent(j,:),delta_ROIs{i,1}{2}{1,4},'rows')==1;
-            rm_delta_ROIs(i,1)=true;
-        end
-    end
+if ~(isempty(delta_ROIs))
     
-end
+    rm_delta_ROIs=false(size(delta_ROIs,1),1);
+    for i=1:size(delta_ROIs,1)
+        for j=1:size(Red_FS,1)
+            if ismember(Red_FS(j,:),delta_ROIs{i,1}{1,3},'rows')==1  && ismember(Red_Cent(j,:),delta_ROIs{i,1}{2}{1,4},'rows')==1;
+                rm_delta_ROIs(i,1)=true;
+            end
+        end
+        
+    end
 
 if sum(rm_delta_ROIs)~=0
 Potential_delta=delta_ROIs(rm_delta_ROIs,1);

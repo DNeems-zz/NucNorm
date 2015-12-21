@@ -144,10 +144,10 @@ ThreshDialog.ConcGroup=uibuttongroup('unit','normalized',...
     'fontweight','bold',...
     'backgroundcolor',get(ThreshDialog.fh,'color'),'parent',ThreshDialog.fh);
 ThreshDialog.ExpMenu = uicontrol('Style','text','String','ObjExp',...
-    'units','normalized','pos',[.6 .3 .2 .4],'parent',ThreshDialog.ConcGroup,...
+    'units','normalized','pos',[.5 .3 .2 .4],'parent',ThreshDialog.ConcGroup,...
     'backgroundcolor',get(ThreshDialog.fh,'color'),'fontsize',10,'HorizontalAlignment','Left','visible','off');
 ThreshDialog.ExpVal=uicontrol('style','edit','units','normalized',...
-    'position',[.75 .20 .1 .6],'string',.2,'backgroundcolor',[1 1 1],...
+    'position',[.65 .20 .1 .6],'string',.2,'backgroundcolor',[1 1 1],...
     'fontsize',10,'parent',ThreshDialog.ConcGroup,'visible','off');
 
 
@@ -176,27 +176,6 @@ if ~handles.MasterSet_Toggle
     set(ThreshDialog.In_MasterBox,'enable','off')
 
 end
-%{
-if size(RawImage{1,1},3)~=1
-    Dims=3;
-else
-    Dims=2;
-end
-ThreshDialog.Conc = uicontrol('Style','popupmenu','String','',...
-    'units','normalized','pos',[.1 .20 .2 .6],'parent',ThreshDialog.ConcGroup,...
-    'backgroundcolor',[1 1 1],'fontsize',10,'HorizontalAlignment','left');
-ThreshDialog.ConcTitle = uicontrol('Style','text','String','',...
-    'units','normalized','pos',[.0 .3 .1 .4],'parent',ThreshDialog.ConcGroup,'FontWeight','Bold',...
-    'backgroundcolor',get(ThreshDialog.fh,'color'),'fontsize',12,'HorizontalAlignment','Right');
-
-if Dims==2
-    set(ThreshDialog.Conc,'string',{4,8})
-    set(ThreshDialog.ConcTitle,'string','2D')
-else
-    set(ThreshDialog.Conc,'string',{6,18,26})
-    set(ThreshDialog.ConcTitle,'string','3D')
-end
-%}
 
 
 ThreshDialog.OutputImage=uicontrol('style','text',...
@@ -218,8 +197,8 @@ switch get(ThreshDialog.fh,'Name')
     case 'Growth'
         set(ThreshDialog.StackRadio,'enable','off')
         set(ThreshDialog.MPRadio,'enable','off')
-        set(ThreshDialog.InMaster,'enable','off')
-        set(ThreshDialog.MaxPRadio,'enable','off')
+        set(ThreshDialog.InMaster,'enable','on')
+        set(ThreshDialog.MaxPRadio,'enable','on')
         set(ThreshDialog.In_MasterOis,'value',1)
         set(ThreshDialog.MastROIRadio,'value',1)
         set(ThreshDialog.WIRadio,'enable','off')
@@ -238,13 +217,18 @@ switch get(ThreshDialog.fh,'Name')
         ThreshDialog.IntDif = uicontrol('Style','edit','String','0.2',...
             'units','normalized','pos',[.35 .20 .1 .6],'parent',ThreshDialog.ConcGroup,...
             'backgroundcolor',[1 1 1],'fontsize',10,'HorizontalAlignment','left');
-       
+        
         if strcmp(varargin{4},'Pick')
             set(ThreshDialog.Search_Title,'visible','off')
             set(ThreshDialog.Search_Num,'visible','off')
         elseif strcmp(varargin{4},'Auto')
-           set(ThreshDialog.IntDif_Title,'visible','off')
-            set(ThreshDialog.IntDif,'visible','off')
+            if varargin{5}==2
+                set(ThreshDialog.IntDif_Title,'visible','off')
+                set(ThreshDialog.IntDif,'visible','off')
+            else
+                            set(ThreshDialog.IntDif_Title,'String','# of Objects')
+                set(ThreshDialog.IntDif,'string','2')    
+            end
         end
 end
 ThreshDialog.FillRadio  = uicontrol('Style','checkbox','String','Fill Holes',...
@@ -271,8 +255,9 @@ data=guidata(SelectionData{3}.fh);
 Current_Chan=get(iHandles.ChannelMenu,'value');
 Current_Display=get(iHandles.DisplayModeMenu,'value');
 MasterROI_Choice=get(iHandles.MasterROIMenu,'value');
-
+MChan=data{10}(1).Channel_Master;
 %Image Processing
+
 switch Process_Type
     case 'Otsu'
         %Otsu
