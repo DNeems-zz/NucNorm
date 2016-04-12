@@ -26,7 +26,6 @@ for R=1:size(Region_Objs,1)
             Ana_ID=H.Ana_ID{R,i};
             Ref_ID=H.Ref_ID{R,j};
             Ref_Set=H.Ref_Set{R,j};
-            
             if H.useCentroid==1 %Calculate for Centroid
                 Cents=Region_Objs{R,1}.getPixel_List(H.Ana_Channels(i),'Centroid','Microns');
 

@@ -71,7 +71,7 @@ switch LoadMode
             Images(k,:)=[toUint8(Color_Chan(k,1)),{Data{~cellfun(@isempty,arrayfun(@(x) strfind(x,sprintf('CH%sChannelDyeName',num2str(k))),Key))}}];
         end
         HasMeta=true;
-        
+        handles.MasterSet_Toggle=0;
     case 4
         %Import for data strucutre alone 
         
@@ -93,6 +93,7 @@ switch LoadMode
 end
 %By passes setting metadata and images in because they already based in as
 %they should be
+
 if LoadMode~=4
     numChan=numel(Images)/2;
     Channels=cell(1,numChan);
@@ -136,6 +137,9 @@ set(handles.MasterROITitle,'visible','on')
 set(handles.MasterSet,'visible','off')
 else
 V='off';    
+set(handles.MasterROIMenu,'visible','off')
+set(handles.MasterROITitle,'visible','off')
+set(handles.MasterSet,'visible','on')
 end
 for i=1:numel(data{10})
     handles.byChanObj(i)=uicontrol('style','text','units','normalized',...

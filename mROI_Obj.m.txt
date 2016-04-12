@@ -204,7 +204,7 @@ classdef mROI_Obj < handle
                             PL(i,1).WeightedCentroid=[PL(i,1).WeightedCentroid,ones(size(PL(i,1).WeightedCentroid,1),1)];
                         end
                     end
-                end
+                
                     
                     for i=1:numel(PL)
                         [~,I]=min(pdist2(PL(i).WeightedCentroid,All_Pix));

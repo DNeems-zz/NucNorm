@@ -8,8 +8,18 @@ switch varargin{3}
         def = {sprintf('%s_%s.mat',data{10}(1).Image_ID,data{10}(1).Image_Number)};
         [FileName,PathName] = uiputfile(def,'Save Segmentation Progress');
         
+        FNs=fieldnames(data{1});
+        for i=1:numel(FNs)
+             if ~isempty(strfind(class(data{1}.(FNs{i})),'matlab'))
+                data{1}.(FNs{i})=[];
+             elseif ~isempty(strfind(FNs{i},'Menu'))
+                data{1}.(FNs{i})=[];
+             end
+        end
+        
         save([PathName,FileName],'data', '-v7.3')
-    %Saves on the commited data
+
+        %Saves on the commited data
     case 2
         data=guidata(varargin{1});
         data{1}.ChannelMenu=get(data{1}.ChannelMenu,'String');

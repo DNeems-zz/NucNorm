@@ -6,6 +6,7 @@ data=ResetGUI(handles);
 
 switch varargin{3}
     case 1
+        
         %All the Data
         tic
         [filename,pathName,~]=uigetfile;
@@ -78,6 +79,7 @@ switch varargin{3}
             handles.ManipulationNumber=lData{10}(1).ManipNum;
             handles.MasterSet_Toggle=lData{1}.MasterSet_Toggle;
             handles.MasterExpansion=lData{1}.MasterExpansion;
+            lData{1}=handles;
             data=lData;
         end
         toc
