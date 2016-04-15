@@ -70,6 +70,7 @@ end
 end
 
 function [Choice]=Update_GUI_Disp(data,handles,GrayScale_Image,Choice)
+
 if GrayScale_Image
     set(handles.OverlayMenu,'string','None','value',1)
     set(handles.Type,'string','Image Type: Gray Scale')
@@ -360,12 +361,17 @@ for i=1:Chan
     end
     
 end
+
 if Disable_mROI
     set(handles.MasterROIMenu,'enable','off')
 
 else
         set(handles.MasterROIMenu,'enable','on')
     set(handles.MasterROIMenu,'visible','on')
+
+end
+if handles.MasterSet_Toggle == 0
+       set(handles.MasterROIMenu,'visible','off')
 
 end
 end

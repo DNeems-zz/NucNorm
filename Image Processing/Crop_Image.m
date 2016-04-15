@@ -7,8 +7,8 @@ if ~isempty(varargin)
     CornerX=CornerX-floor(Height*Expand);
     CornerY=CornerY-floor(Width*Expand);
     CornerZ=CornerZ-floor(Depth*Expand);
-
     E=floor([Height,Width,Depth]+[Height,Width,Depth].*(Expand*2));
+
     Height=E(1);
     Width=E(2);
     Depth=E(3);
